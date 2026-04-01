@@ -697,7 +697,7 @@ async function postRecord(action, payload) {
     await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action, ...payload }),
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'text/plain' }  // ✅ 不觸發預檢請求
     });
   } catch(e) { console.warn('儲存紀錄失敗:', e); }
 }
