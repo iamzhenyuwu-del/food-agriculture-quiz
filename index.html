@@ -46,7 +46,7 @@
     <input type="text" id="m1-user" class="form-control mb-3" placeholder="請輸入你的名字">
     <h6>選擇大類：</h6>
     <div id="cat-container" class="mb-3">
-      </div>
+    </div>
     <button class="btn btn-primary w-100" onclick="startMode1()">開始測驗</button>
   </div>
 </div>
@@ -221,19 +221,26 @@ async function endGame() {
   const payload = {
     action: currentMode === 1 ? 'saveMode1' : 'saveMode2',
     username: user || '匿名',
-    score: correctCount, // 模式一用這個
-    streak: correctCount, // 模式二用這個
+    score: correctCount, 
+    streak: correctCount, 
     timeSeconds: timerSec,
     categories: selectedCats.join(',')
   };
 
   alert(`測驗結束！\n模式：${currentMode === 1 ? '練習' : '挑戰'}\n成績：${correctCount}\n時間：${timerSec} 秒`);
   
-  await fetch(API_URL, {
-    method: 'POST',
-    mode: 'no-cors', // 避免 GAS 的跨網域問題
-    body: JSON.stringify(payload)
-  });
+  try {
+    // 確保接力棒（純文字化 JSON）能順利繞過跨網域預檢限制
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+  } catch(error) {
+    console.error('儲存紀錄失敗:', error);
+  }
   
   showPage('home');
 }
