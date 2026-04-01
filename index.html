@@ -45,8 +45,7 @@
     <h4>📝 模式一設定</h4>
     <input type="text" id="m1-user" class="form-control mb-3" placeholder="請輸入你的名字">
     <h6>選擇大類：</h6>
-    <div id="cat-container" class="mb-3">
-      </div>
+    <div id="cat-container" class="mb-3"></div>
     <button class="btn btn-primary w-100" onclick="startMode1()">開始測驗</button>
   </div>
 </div>
@@ -86,7 +85,6 @@
 </div>
 
 <script>
-// !!! 請在此填入你的 Google Apps Script 部署網址 !!!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyeIH0T4aE45wbwH1GpuxLr-lp2SfWmavhBWKkH-ezYozOMZbWUZnZpk_Sa_s7-2gp4/exec';
 
 const CATEGORIES = ['土壤與農業', '食物與營養', '環境與生態', '產地與季節', '食品安全'];
@@ -100,7 +98,6 @@ let timerInt;
 let currentMode = 1;
 let selectedCats = [];
 
-// 初始化類別選擇
 const catBox = document.getElementById('cat-container');
 CATEGORIES.forEach(cat => {
   const span = document.createElement('span');
@@ -122,7 +119,6 @@ function showPage(id) {
 
 async function startMode1() {
   if(selectedCats.length === 0) return alert('請至少選擇一個大類');
-  const user = document.getElementById('m1-user').value || '匿名玩家';
   currentMode = 1;
   await loadQuestions(selectedCats.join(','));
 }
@@ -131,7 +127,7 @@ async function startMode2() {
   const user = document.getElementById('m2-user').value;
   if(!user) return alert('請輸入挑戰者名字');
   currentMode = 2;
-  await loadQuestions(''); // 模式二不傳類別即抓取全部
+  await loadQuestions(''); 
 }
 
 async function loadQuestions(catStr) {
@@ -153,115 +149,4 @@ async function loadQuestions(catStr) {
 
 function renderQuestion() {
   const q = quizData[currentIdx];
-  const info = document.getElementById('quiz-info');
-  info.innerText = currentMode === 1 ? `進度：${currentIdx + 1} / ${quizData.length}` : `連續答對：${correctCount}`;
-  
-  document.getElementById('progress-bar').style.width = currentMode === 1 ? `${(currentIdx / quizData.length) * 100}%` : '100%';
-  document.getElementById('q-text').innerText = `[${q.category}] ${q.question}`;
-  
-  const container = document.getElementById('options-container');
-  container.innerHTML = '';
-  
-  q.options.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.innerHTML = `<b>${LETTERS[i]}.</b> ${opt}`;
-    btn.onclick = () => checkAnswer(LETTERS[i], q.answer, btn);
-    container.appendChild(btn);
-  });
-}
-
-function checkAnswer(chosen, correct, btn) {
-  const btns = document.querySelectorAll('.option-btn');
-  btns.forEach(b => b.disabled = true); // 防止連按
-  
-  if(chosen === correct) {
-    btn.classList.add('correct');
-    correctCount++;
-    setTimeout(() => {
-      currentIdx++;
-      if(currentMode === 1 && currentIdx < quizData.length) {
-        renderQuestion();
-      } else if (currentMode === 2) {
-        // 模式二：如果題目抽完了就再洗牌一次無限出題
-        if(currentIdx >= quizData.length) { quizData = shuffle(quizData); currentIdx = 0; }
-        renderQuestion();
-      } else {
-        endGame();
-      }
-    }, 1000);
-  } else {
-    btn.classList.add('wrong');
-    // 顯示正確答案
-    btns.forEach((b, i) => { if(LETTERS[i] === correct) b.classList.add('correct'); });
-    setTimeout(() => {
-      if(currentMode === 2) endGame();
-      else {
-        currentIdx++;
-        if(currentIdx < quizData.length) renderQuestion();
-        else endGame();
-      }
-    }, 1500);
-  }
-}
-
-function startTimer() {
-  clearInterval(timerInt);
-  timerInt = setInterval(() => {
-    timerSec++;
-    const m = Math.floor(timerSec / 60).toString().padStart(2, '0');
-    const s = (timerSec % 60).toString().padStart(2, '0');
-    document.getElementById('timer').innerText = `⏱ ${m}:${s}`;
-  }, 1000);
-}
-
-async function endGame() {
-  clearInterval(timerInt);
-  const user = currentMode === 1 ? document.getElementById('m1-user').value : document.getElementById('m2-user').value;
-  const payload = {
-    action: currentMode === 1 ? 'saveMode1' : 'saveMode2',
-    username: user || '匿名',
-    score: correctCount, // 模式一用這個
-    streak: correctCount, // 模式二用這個
-    timeSeconds: timerSec,
-    categories: selectedCats.join(',')
-  };
-
-  alert(`測驗結束！\n模式：${currentMode === 1 ? '練習' : '挑戰'}\n成績：${correctCount}\n時間：${timerSec} 秒`);
-  
-  await fetch(API_URL, {
-    method: 'POST',
-    mode: 'no-cors', // 避免 GAS 的跨網域問題
-    body: JSON.stringify(payload)
-  });
-  
-  showPage('home');
-}
-
-async function loadLeaderboard() {
-  const body = document.getElementById('lb-body');
-  body.innerHTML = '<tr><td colspan="4" class="text-center">載入中...</td></tr>';
-  try {
-    const resp = await fetch(`${API_URL}?action=getLeaderboard`);
-    const data = await resp.json();
-    body.innerHTML = data.leaderboard.map(u => `
-      <tr>
-        <td>${u.rank}</td>
-        <td>${u.username}</td>
-        <td class="text-danger fw-bold">${u.streak}</td>
-        <td>${u.timeSeconds}s</td>
-      </tr>
-    `).join('');
-  } catch(e) { body.innerHTML = '<tr><td colspan="4" class="text-center">暫無數據</td></tr>'; }
-}
-
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-</script>
-</body>
-</html>
+  const info = document
