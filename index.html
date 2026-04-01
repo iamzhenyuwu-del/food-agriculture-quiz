@@ -4,1023 +4,264 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>食農教育考驗系統</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-  :root {
-    --green: #2e7d32;
-    --green-light: #4caf50;
-    --green-pale: #e8f5e9;
-    --orange: #e65100;
-    --orange-light: #ff9800;
-    --orange-pale: #fff3e0;
-    --blue: #1565c0;
-    --blue-light: #2196f3;
-    --blue-pale: #e3f2fd;
-    --gold: #f9a825;
-    --silver: #9e9e9e;
-    --bronze: #8d6e63;
-    --bg: #f5f5f5;
-    --card: #ffffff;
-    --text: #212121;
-    --text-secondary: #757575;
-    --radius: 12px;
-    --shadow: 0 2px 12px rgba(0,0,0,0.1);
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
-
-  /* ---- Header ---- */
-  .header {
-    background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%);
-    color: #fff;
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  }
-  .header h1 { font-size: 1.4rem; font-weight: 700; }
-  .header-sub { font-size: 0.85rem; opacity: 0.85; }
-  .nav-btns { display: flex; gap: 8px; }
-  .nav-btn {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.4);
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: background 0.2s;
-  }
-  .nav-btn:hover, .nav-btn.active { background: rgba(255,255,255,0.35); }
-
-  /* ---- Pages ---- */
-  .page { display: none; padding: 24px; max-width: 800px; margin: 0 auto; }
-  .page.active { display: block; }
-
-  /* ---- Card ---- */
-  .card {
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 24px;
-    box-shadow: var(--shadow);
-    margin-bottom: 16px;
-  }
-
-  .card-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 16px;
-    color: var(--green);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  /* ---- Home Page ---- */
-  .home-hero {
-    background: linear-gradient(135deg, var(--green-pale), #fff);
-    border-radius: var(--radius);
-    padding: 32px;
-    text-align: center;
-    margin-bottom: 24px;
-    border: 1px solid #c8e6c9;
-  }
-  .home-hero h2 { font-size: 1.6rem; color: var(--green); margin-bottom: 8px; }
-  .home-hero p { color: var(--text-secondary); font-size: 0.95rem; }
-
-  .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-  .mode-card {
-    border-radius: var(--radius);
-    padding: 24px;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: 2px solid transparent;
-    text-align: center;
-  }
-  .mode-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-  .mode-card.mode1 { background: var(--blue-pale); border-color: #90caf9; }
-  .mode-card.mode2 { background: var(--orange-pale); border-color: #ffcc02; }
-  .mode-card .icon { font-size: 2.5rem; margin-bottom: 12px; }
-  .mode-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
-  .mode-card p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
-
-  /* ---- Username input ---- */
-  .username-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 20px;
-    background: #f9f9f9;
-    border-radius: 8px;
-    padding: 12px 16px;
-  }
-  .username-row label { font-weight: 600; white-space: nowrap; }
-  .username-row input {
-    flex: 1;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 1rem;
-    font-family: inherit;
-  }
-
-  /* ---- Category selector ---- */
-  .cat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  .cat-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 2px solid #e0e0e0;
-    cursor: pointer;
-    font-size: 0.9rem;
-    background: #fff;
-    transition: all 0.2s;
-    user-select: none;
-  }
-  .cat-chip:hover { border-color: var(--green-light); }
-  .cat-chip.selected {
-    background: var(--green-pale);
-    border-color: var(--green-light);
-    color: var(--green);
-    font-weight: 600;
-  }
-  .cat-chip input[type="checkbox"] { display: none; }
-
-  /* ---- Number input ---- */
-  .num-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .num-row label { font-weight: 600; }
-  .num-row input {
-    width: 80px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 1rem;
-    font-family: inherit;
-  }
-
-  /* ---- Buttons ---- */
-  .btn {
-    padding: 12px 28px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-family: inherit;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-green { background: var(--green-light); color: #fff; }
-  .btn-green:hover { background: var(--green); }
-  .btn-orange { background: var(--orange-light); color: #fff; }
-  .btn-orange:hover { background: var(--orange); }
-  .btn-gray { background: #e0e0e0; color: #555; }
-  .btn-gray:hover { background: #bdbdbd; }
-  .btn-full { width: 100%; margin-top: 8px; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* ---- Quiz area ---- */
-  .quiz-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    background: #fff;
-    padding: 12px 16px;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-  }
-  .quiz-progress { font-size: 0.9rem; color: var(--text-secondary); }
-  .quiz-timer { font-size: 1.1rem; font-weight: 700; color: var(--orange); }
-  .quiz-streak { font-size: 1rem; font-weight: 700; color: var(--green); }
-
-  .progress-bar-wrap {
-    background: #e0e0e0;
-    border-radius: 4px;
-    height: 6px;
-    margin-bottom: 20px;
-    overflow: hidden;
-  }
-  .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--green-light), var(--green));
-    border-radius: 4px;
-    transition: width 0.3s;
-  }
-
-  .question-card {
-    background: #fff;
-    border-radius: var(--radius);
-    padding: 24px;
-    box-shadow: var(--shadow);
-    margin-bottom: 16px;
-  }
-  .question-cat {
-    display: inline-block;
-    background: var(--green-pale);
-    color: var(--green);
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-  }
-  .question-text {
-    font-size: 1.1rem;
-    font-weight: 600;
-    line-height: 1.6;
-    margin-bottom: 20px;
-  }
-
-  .options-list { display: flex; flex-direction: column; gap: 10px; }
-  .option-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-family: inherit;
-    background: #fff;
-    text-align: left;
-    transition: all 0.2s;
-  }
-  .option-btn:hover:not(:disabled) { border-color: var(--green-light); background: var(--green-pale); }
-  .option-btn .opt-letter {
-    min-width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 0.85rem;
-  }
-  .option-btn.correct { border-color: #4caf50; background: #e8f5e9; }
-  .option-btn.correct .opt-letter { background: #4caf50; color: #fff; }
-  .option-btn.wrong { border-color: #f44336; background: #ffebee; }
-  .option-btn.wrong .opt-letter { background: #f44336; color: #fff; }
-  .option-btn:disabled { cursor: default; }
-
-  .feedback-text {
-    text-align: center;
-    font-size: 1.3rem;
-    font-weight: 700;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    animation: fadeIn 0.3s;
-  }
-  .feedback-text.correct-fb { background: #e8f5e9; color: #2e7d32; }
-  .feedback-text.wrong-fb { background: #ffebee; color: #c62828; }
-
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* ---- Result ---- */
-  .result-hero {
-    text-align: center;
-    padding: 32px;
-    background: linear-gradient(135deg, var(--green-pale), #fff);
-    border-radius: var(--radius);
-    margin-bottom: 20px;
-  }
-  .result-score {
-    font-size: 3rem;
-    font-weight: 900;
-    color: var(--green);
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-  .result-label { color: var(--text-secondary); font-size: 0.95rem; }
-  .result-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin-top: 20px;
-  }
-  .stat-box {
-    background: #fff;
-    border-radius: 8px;
-    padding: 16px;
-    text-align: center;
-    border: 1px solid #e0e0e0;
-  }
-  .stat-val { font-size: 1.6rem; font-weight: 800; }
-  .stat-name { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
-
-  /* ---- Mode 2 result ---- */
-  .m2-result-hero {
-    text-align: center;
-    padding: 32px;
-    background: linear-gradient(135deg, var(--orange-pale), #fff);
-    border-radius: var(--radius);
-    margin-bottom: 20px;
-  }
-  .m2-result-streak {
-    font-size: 3.5rem;
-    font-weight: 900;
-    color: var(--orange);
-    line-height: 1;
-  }
-
-  /* ---- Leaderboard ---- */
-  .lb-table { width: 100%; border-collapse: collapse; }
-  .lb-table th {
-    background: var(--orange-light);
-    color: #fff;
-    padding: 12px 16px;
-    text-align: left;
-    font-size: 0.9rem;
-  }
-  .lb-table td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
-  .lb-table tr:nth-child(even) td { background: #fafafa; }
-  .lb-table tr:hover td { background: var(--orange-pale); }
-  .rank-1 { color: var(--gold); font-weight: 900; font-size: 1.2rem; }
-  .rank-2 { color: var(--silver); font-weight: 800; }
-  .rank-3 { color: var(--bronze); font-weight: 700; }
-  .lb-refresh {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-  .lb-last-update { font-size: 0.8rem; color: var(--text-secondary); }
-
-  .empty-state {
-    text-align: center;
-    padding: 48px 24px;
-    color: var(--text-secondary);
-  }
-  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
-
-  /* ---- Toast ---- */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: #323232;
-    color: #fff;
-    padding: 12px 24px;
-    border-radius: 24px;
-    font-size: 0.9rem;
-    z-index: 999;
-    transition: transform 0.3s;
-    white-space: nowrap;
-  }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-
-  /* ---- Loading ---- */
-  .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 40px;
-    color: var(--text-secondary);
-  }
-  .spinner {
-    width: 28px; height: 28px;
-    border: 3px solid #e0e0e0;
-    border-top-color: var(--green-light);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  @media (max-width: 600px) {
-    .mode-cards { grid-template-columns: 1fr; }
-    .result-stats { grid-template-columns: 1fr 1fr; }
-    .header h1 { font-size: 1.1rem; }
-    .page { padding: 16px; }
-  }
-
-  /* ---- Config Banner ---- */
-  .config-banner {
-    background: #fff3e0;
-    border: 1px solid #ffcc02;
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .config-banner a { color: var(--orange); font-weight: 700; }
+  :root { --green: #2e7d32; --green-light: #4caf50; --orange: #e65100; --bg: #f5f5f5; --radius: 12px; }
+  body { font-family: sans-serif; background: var(--bg); padding-bottom: 50px; }
+  .header { background: var(--green); color: white; padding: 20px; text-align: center; margin-bottom: 20px; }
+  .page { display: none; max-width: 700px; margin: 0 auto; padding: 15px; }
+  .active { display: block; }
+  .card { border-radius: var(--radius); border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 15px; }
+  .option-btn { display: block; width: 100%; text-align: left; padding: 12px 15px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; transition: 0.2s; }
+  .option-btn:hover:not(:disabled) { border-color: var(--green-light); background: #f1f8e9; }
+  .correct { background: #e8f5e9 !important; border-color: #4caf50 !important; color: #2e7d32; font-weight: bold; }
+  .wrong { background: #ffebee !important; border-color: #f44336 !important; color: #c62828; }
+  .cat-chip { display: inline-block; padding: 8px 15px; border: 2px solid #ddd; border-radius: 20px; margin: 5px; cursor: pointer; }
+  .cat-chip.selected { background: var(--green-light); color: white; border-color: var(--green); }
+  .timer { font-size: 1.2rem; font-weight: bold; color: var(--orange); }
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <div class="header">
-  <div>
-    <div class="header h1">🌱 食農教育考驗</div>
-    <div class="header-sub">農業知識小測驗</div>
-  </div>
-  <div class="nav-btns">
-    <button class="nav-btn active" onclick="showPage('home')">🏠 首頁</button>
-    <button class="nav-btn" onclick="showPage('leaderboard')">🏆 排行榜</button>
+  <h1>🌱 食農教育考驗</h1>
+  <div class="mt-2">
+    <button class="btn btn-sm btn-outline-light" onclick="showPage('home')">🏠 首頁</button>
+    <button class="btn btn-sm btn-outline-light" onclick="showPage('leaderboard')">🏆 排行榜</button>
   </div>
 </div>
 
-<!-- ===================== HOME PAGE ===================== -->
-<div id="page-home" class="page active">
-  <div id="config-banner" class="config-banner" style="display:none">
-    ⚠️ 尚未設定 API 端點，請參考
-    <a href="#" onclick="showConfig()">設定說明</a>
-    或在 <code>script</code> 中填入你的 Apps Script URL。
-  </div>
-
-  <div class="home-hero">
-    <h2>🌾 食農教育知識考驗</h2>
-    <p>測試你對農業、食物、環境的知識！選擇模式開始挑戰吧</p>
-  </div>
-
-  <div class="mode-cards">
-    <div class="mode-card mode1" onclick="showPage('mode1-setup')">
-      <div class="icon">📝</div>
-      <h3>模式一：分類測驗</h3>
-      <p>選擇一個或多個大類，系統隨機抽題。完成後顯示分數與作答時間。</p>
-    </div>
-    <div class="mode-card mode2" onclick="showPage('mode2-setup')">
-      <div class="icon">🔥</div>
-      <h3>模式二：無限挑戰</h3>
-      <p>不限大類，無限出題。答錯即停止，看你能連續答對幾題！</p>
-    </div>
+<div id="page-home" class="page active text-center">
+  <div class="card">
+    <h3>歡迎參加考驗</h3>
+    <p>請選擇測驗模式開始你的食農知識之旅</p>
+    <button class="btn btn-success btn-lg w-100 mb-3" onclick="showPage('mode1-setup')">模式一：分類練習</button>
+    <button class="btn btn-warning btn-lg w-100" onclick="showPage('mode2-setup')">模式二：生存挑戰</button>
   </div>
 </div>
 
-<!-- ===================== MODE 1 SETUP ===================== -->
 <div id="page-mode1-setup" class="page">
   <div class="card">
-    <div class="card-title">📝 模式一設定</div>
-
-    <div class="username-row">
-      <label>👤 姓名</label>
-      <input type="text" id="m1-username" placeholder="輸入你的名字（可選）" maxlength="20">
-    </div>
-
-    <div class="card-title" style="font-size:0.95rem; color:#555; margin-bottom:8px">選擇大類（至少選一個）</div>
-    <div class="cat-grid" id="cat-grid">
-      <!-- generated by JS -->
-    </div>
-
-    <div class="num-row">
-      <label>題數</label>
-      <input type="number" id="m1-count" value="10" min="1" max="50">
-      <span style="color:var(--text-secondary); font-size:0.9rem">題（最多依題庫數量）</span>
-    </div>
-
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn btn-gray" onclick="showPage('home')">← 返回</button>
-      <button class="btn btn-green" id="m1-start-btn" onclick="startMode1()">開始測驗 🚀</button>
-    </div>
+    <h4>📝 模式一設定</h4>
+    <input type="text" id="m1-user" class="form-control mb-3" placeholder="請輸入你的名字">
+    <h6>選擇大類：</h6>
+    <div id="cat-container" class="mb-3">
+      </div>
+    <button class="btn btn-primary w-100" onclick="startMode1()">開始測驗</button>
   </div>
 </div>
 
-<!-- ===================== MODE 1 QUIZ ===================== -->
-<div id="page-mode1-quiz" class="page">
-  <div class="quiz-header">
-    <div class="quiz-progress" id="m1-progress">題目 1 / 10</div>
-    <div class="quiz-timer" id="m1-timer">⏱ 0:00</div>
-  </div>
-  <div class="progress-bar-wrap">
-    <div class="progress-bar" id="m1-progress-bar" style="width:0%"></div>
-  </div>
-  <div id="m1-question-area"></div>
-</div>
-
-<!-- ===================== MODE 1 RESULT ===================== -->
-<div id="page-mode1-result" class="page">
-  <div class="result-hero">
-    <div class="result-score" id="m1-score-display">8 / 10</div>
-    <div class="result-label">🎉 測驗完成！</div>
-    <div class="result-stats">
-      <div class="stat-box">
-        <div class="stat-val" id="m1-stat-correct">8</div>
-        <div class="stat-name">答對題數</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-val" id="m1-stat-pct">80%</div>
-        <div class="stat-name">正確率</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-val" id="m1-stat-time">2:34</div>
-        <div class="stat-name">花費時間</div>
-      </div>
-    </div>
-  </div>
-  <div style="display:flex; gap:10px; flex-wrap:wrap;">
-    <button class="btn btn-gray btn-full" onclick="showPage('home')">🏠 回首頁</button>
-    <button class="btn btn-green btn-full" onclick="showPage('mode1-setup')">🔄 再玩一次</button>
-  </div>
-</div>
-
-<!-- ===================== MODE 2 SETUP ===================== -->
 <div id="page-mode2-setup" class="page">
   <div class="card">
-    <div class="card-title">🔥 模式二設定</div>
-    <div class="username-row">
-      <label>👤 姓名</label>
-      <input type="text" id="m2-username" placeholder="輸入你的名字（排行榜顯示）" maxlength="20" required>
-    </div>
-    <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px; line-height:1.6">
-      🔥 系統從所有大類中隨機出題，<strong>連續答對越多越好</strong>！<br>
-      答錯一題即結束，成績將記錄到排行榜。
-    </p>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn btn-gray" onclick="showPage('home')">← 返回</button>
-      <button class="btn btn-orange" onclick="startMode2()">開始挑戰 🔥</button>
-    </div>
+    <h4>🔥 模式二：生存挑戰</h4>
+    <p>答錯一題即結束，看你能連續答對幾題！</p>
+    <input type="text" id="m2-user" class="form-control mb-3" placeholder="請輸入挑戰者名字">
+    <button class="btn btn-danger w-100" onclick="startMode2()">進入戰場</button>
   </div>
 </div>
 
-<!-- ===================== MODE 2 QUIZ ===================== -->
-<div id="page-mode2-quiz" class="page">
-  <div class="quiz-header">
-    <div class="quiz-streak" id="m2-streak">🔥 連續：0</div>
-    <div class="quiz-timer" id="m2-timer">⏱ 0:00</div>
+<div id="page-quiz" class="page">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div id="quiz-info" class="fw-bold">載入中...</div>
+    <div id="timer" class="timer">⏱ 00:00</div>
   </div>
-  <div id="m2-question-area"></div>
-</div>
-
-<!-- ===================== MODE 2 RESULT ===================== -->
-<div id="page-mode2-result" class="page">
-  <div class="m2-result-hero">
-    <div style="font-size:1rem; color:#e65100; margin-bottom:8px">❌ 答錯了！挑戰結束</div>
-    <div class="m2-result-streak" id="m2-streak-display">12</div>
-    <div style="font-size:1rem; color:#555; margin-top:4px">連續答對題數</div>
-    <div style="display:flex; justify-content:center; gap:24px; margin-top:20px">
-      <div class="stat-box" style="min-width:100px">
-        <div class="stat-val" id="m2-stat-time">1:45</div>
-        <div class="stat-name">花費時間</div>
-      </div>
-      <div class="stat-box" style="min-width:100px">
-        <div class="stat-val" id="m2-stat-user">玩家</div>
-        <div class="stat-name">挑戰者</div>
-      </div>
-    </div>
+  <div class="progress mb-3" style="height: 10px;">
+    <div id="progress-bar" class="progress-bar bg-success" style="width: 0%"></div>
   </div>
-  <div style="display:flex; gap:10px; flex-wrap:wrap;">
-    <button class="btn btn-gray btn-full" onclick="showPage('home')">🏠 回首頁</button>
-    <button class="btn btn-orange btn-full" onclick="showPage('leaderboard')">🏆 查看排行榜</button>
-    <button class="btn btn-green btn-full" onclick="showPage('mode2-setup')">🔄 再挑戰</button>
+  <div id="question-card" class="card">
+    <h5 id="q-text">題目載入中...</h5>
+    <div id="options-container" class="mt-3"></div>
   </div>
 </div>
 
-<!-- ===================== LEADERBOARD ===================== -->
 <div id="page-leaderboard" class="page">
   <div class="card">
-    <div class="card-title">🏆 排行榜 — 模式二連續答對</div>
-    <div class="lb-refresh">
-      <button class="btn btn-orange" onclick="loadLeaderboard()" style="padding:8px 16px; font-size:0.85rem">🔄 重新整理</button>
-      <span class="lb-last-update" id="lb-update-time">尚未載入</span>
-    </div>
-    <div id="lb-content">
-      <div class="loading"><div class="spinner"></div> 載入中…</div>
-    </div>
+    <h4>🏆 生存模式排行榜 (前100)</h4>
+    <table class="table table-hover mt-3">
+      <thead><tr><th>排名</th><th>名字</th><th>連對數</th><th>秒數</th></tr></thead>
+      <tbody id="lb-body"></tbody>
+    </table>
+    <button class="btn btn-secondary w-100" onclick="showPage('home')">回首頁</button>
   </div>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
-<!-- ===================== JAVASCRIPT ===================== -->
 <script>
-// ================================================
-// ⚙️ 設定區：請替換成你的 Google Apps Script Web App URL
-// ================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbxmLIdl_qRvE8Wz4fP_WDj1uDa3urNBqjO5_2970xvrZOcD2f0HWxCW5xpX5gw0mUi7/exec';
+// !!! 請在此填入你的 Google Apps Script 部署網址 !!!
+const API_URL = '你的_GAS_網址_HERE';
 
-// 五大類別
 const CATEGORIES = ['土壤與農業', '食物與營養', '環境與生態', '產地與季節', '食品安全'];
+const LETTERS = ['A', 'B', 'C', 'D'];
 
-// ================================================
-// 狀態
-// ================================================
-let allQuestions = [];     // 從 API 取回的所有題目
-let quizQuestions = [];    // 本次測驗的題目陣列
+let quizData = [];
 let currentIdx = 0;
 let correctCount = 0;
-let timerInterval = null;
-let startTime = null;
-let mode2Streak = 0;
-let answered = false;
-let mode2Running = false;
+let timerSec = 0;
+let timerInt;
+let currentMode = 1;
+let selectedCats = [];
 
-// ================================================
-// 頁面切換
-// ================================================
+// 初始化類別選擇
+const catBox = document.getElementById('cat-container');
+CATEGORIES.forEach(cat => {
+  const span = document.createElement('span');
+  span.className = 'cat-chip';
+  span.innerText = cat;
+  span.onclick = () => {
+    span.classList.toggle('selected');
+    if(span.classList.contains('selected')) selectedCats.push(cat);
+    else selectedCats = selectedCats.filter(c => c !== cat);
+  };
+  catBox.appendChild(span);
+});
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const page = document.getElementById('page-' + id);
-  if (page) page.classList.add('active');
-  if (id === 'home') document.querySelectorAll('.nav-btn')[0].classList.add('active');
-  if (id === 'leaderboard') {
-    document.querySelectorAll('.nav-btn')[1].classList.add('active');
-    loadLeaderboard();
-  }
-  window.scrollTo(0, 0);
-}
-
-// ================================================
-// 計時器
-// ================================================
-function startTimer() {
-  startTime = Date.now();
-  clearInterval(timerInterval);
-  timerInterval = setInterval(updateTimerDisplay, 500);
-}
-function stopTimer() {
-  clearInterval(timerInterval);
-  return (Date.now() - startTime) / 1000;
-}
-function updateTimerDisplay() {
-  const sec = Math.floor((Date.now() - startTime) / 1000);
-  const m = Math.floor(sec / 60).toString().padStart(2,'0');
-  const s = (sec % 60).toString().padStart(2,'0');
-  const str = `⏱ ${m}:${s}`;
-  const t1 = document.getElementById('m1-timer');
-  const t2 = document.getElementById('m2-timer');
-  if (t1) t1.textContent = str;
-  if (t2) t2.textContent = str;
-}
-function formatTime(sec) {
-  const s = Math.round(sec);
-  const m = Math.floor(s / 60).toString().padStart(2,'0');
-  const ss = (s % 60).toString().padStart(2,'0');
-  return `${m}:${ss}`;
-}
-
-// ================================================
-// API calls
-// ================================================
-async function fetchQuestions(categories) {
-  if (API_URL.includes('YOUR_')) {
-    // Demo mode — use sample questions
-    return getDemoQuestions(categories);
-  }
-  const catParam = categories ? categories.join(',') : '';
-  const res = await fetch(`${API_URL}?action=getQuestions&category=${encodeURIComponent(catParam)}`);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data.questions;
-}
-
-async function postRecord(action, payload) {
-  if (API_URL.includes('YOUR_')) return; // demo mode skip
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action, ...payload }),
-      headers: { 'Content-Type': 'text/plain' }  // ✅ 不觸發預檢請求
-    });
-  } catch(e) { console.warn('儲存紀錄失敗:', e); }
-}
-
-async function fetchLeaderboard() {
-  if (API_URL.includes('YOUR_')) return getDemoLeaderboard();
-  const res = await fetch(`${API_URL}?action=getLeaderboard`);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data.leaderboard;
-}
-
-// ================================================
-// Mode 1 — Setup
-// ================================================
-function initCatGrid() {
-  const grid = document.getElementById('cat-grid');
-  grid.innerHTML = CATEGORIES.map(cat => `
-    <label class="cat-chip">
-      <input type="checkbox" value="${cat}" onchange="this.closest('.cat-chip').classList.toggle('selected', this.checked)">
-      ${catEmoji(cat)} ${cat}
-    </label>
-  `).join('');
-}
-
-function catEmoji(cat) {
-  const map = {'土壤與農業':'🌱','食物與營養':'🥗','環境與生態':'🌍','產地與季節':'🗺️','食品安全':'🔒'};
-  return map[cat] || '📌';
-}
-
-function getSelectedCats() {
-  return [...document.querySelectorAll('#cat-grid input:checked')].map(c => c.value);
+  document.getElementById('page-' + id).classList.add('active');
+  if(id === 'leaderboard') loadLeaderboard();
 }
 
 async function startMode1() {
-  const cats = getSelectedCats();
-  if (cats.length === 0) { showToast('請至少選擇一個大類！'); return; }
-  const count = parseInt(document.getElementById('m1-count').value) || 10;
+  if(selectedCats.length === 0) return alert('請至少選擇一個大類');
+  const user = document.getElementById('m1-user').value || '匿名玩家';
+  currentMode = 1;
+  await loadQuestions(selectedCats.join(','));
+}
 
-  document.getElementById('m1-start-btn').disabled = true;
-  document.getElementById('m1-start-btn').textContent = '載入題目中…';
+async function startMode2() {
+  const user = document.getElementById('m2-user').value;
+  if(!user) return alert('請輸入挑戰者名字');
+  currentMode = 2;
+  await loadQuestions(''); // 模式二不傳類別即抓取全部
+}
 
+async function loadQuestions(catStr) {
+  showPage('quiz');
+  document.getElementById('q-text').innerText = "題目載入中，請稍候...";
   try {
-    const qs = await fetchQuestions(cats);
-    if (qs.length === 0) { showToast('所選大類目前沒有題目，請先新增題目到 Google Sheets'); return; }
-    quizQuestions = shuffle(qs).slice(0, Math.min(count, qs.length));
+    const resp = await fetch(`${API_URL}?action=getQuestions&category=${encodeURIComponent(catStr)}`);
+    const data = await resp.json();
+    quizData = shuffle(data.questions);
+    if(quizData.length === 0) return alert('資料庫目前沒有這類題目！');
+    
     currentIdx = 0;
     correctCount = 0;
-    showPage('mode1-quiz');
+    timerSec = 0;
     startTimer();
-    renderMode1Question();
-  } catch(e) {
-    showToast('載入題目失敗：' + e.message);
-  } finally {
-    document.getElementById('m1-start-btn').disabled = false;
-    document.getElementById('m1-start-btn').textContent = '開始測驗 🚀';
-  }
+    renderQuestion();
+  } catch(e) { alert('連線失敗：' + e); }
 }
 
-function renderMode1Question() {
-  const total = quizQuestions.length;
-  const q = quizQuestions[currentIdx];
-  document.getElementById('m1-progress').textContent = `題目 ${currentIdx+1} / ${total}`;
-  document.getElementById('m1-progress-bar').style.width = `${(currentIdx/total)*100}%`;
-  answered = false;
-  document.getElementById('m1-question-area').innerHTML = buildQuestionHTML(q, 'm1');
-}
-
-function m1Answer(btn, chosen, correct) {
-  if (answered) return;
-  answered = true;
-  const isCorrect = chosen === correct;
-  if (isCorrect) correctCount++;
-  highlightAnswer(btn, chosen, correct, 'm1');
-
-  setTimeout(() => {
-    currentIdx++;
-    if (currentIdx < quizQuestions.length) {
-      renderMode1Question();
-    } else {
-      finishMode1();
-    }
-  }, 1200);
-}
-
-async function finishMode1() {
-  const seconds = stopTimer();
-  const total = quizQuestions.length;
-  const pct = Math.round((correctCount / total) * 100);
-  const username = document.getElementById('m1-username').value.trim() || '匿名';
-  const cats = getSelectedCats();
-
-  document.getElementById('m1-score-display').textContent = `${correctCount} / ${total}`;
-  document.getElementById('m1-stat-correct').textContent = correctCount;
-  document.getElementById('m1-stat-pct').textContent = pct + '%';
-  document.getElementById('m1-stat-time').textContent = formatTime(seconds);
-
-  showPage('mode1-result');
-
-  await postRecord('saveMode1', {
-    username, categories: cats.join(','),
-    score: correctCount, total, timeSeconds: Math.round(seconds)
+function renderQuestion() {
+  const q = quizData[currentIdx];
+  const info = document.getElementById('quiz-info');
+  info.innerText = currentMode === 1 ? `進度：${currentIdx + 1} / ${quizData.length}` : `連續答對：${correctCount}`;
+  
+  document.getElementById('progress-bar').style.width = currentMode === 1 ? `${(currentIdx / quizData.length) * 100}%` : '100%';
+  document.getElementById('q-text').innerText = `[${q.category}] ${q.question}`;
+  
+  const container = document.getElementById('options-container');
+  container.innerHTML = '';
+  
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<b>${LETTERS[i]}.</b> ${opt}`;
+    btn.onclick = () => checkAnswer(LETTERS[i], q.answer, btn);
+    container.appendChild(btn);
   });
 }
 
-// ================================================
-// Mode 2 — Infinite challenge
-// ================================================
-async function startMode2() {
-  const username = document.getElementById('m2-username').value.trim();
-  if (!username) { showToast('請輸入你的名字！'); return; }
-
-  try {
-    allQuestions = await fetchQuestions(null);
-    if (allQuestions.length === 0) { showToast('目前沒有題目，請先新增題目到 Google Sheets'); return; }
-  } catch(e) {
-    showToast('載入題目失敗：' + e.message);
-    return;
+function checkAnswer(chosen, correct, btn) {
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true); // 防止連按
+  
+  if(chosen === correct) {
+    btn.classList.add('correct');
+    correctCount++;
+    setTimeout(() => {
+      currentIdx++;
+      if(currentMode === 1 && currentIdx < quizData.length) {
+        renderQuestion();
+      } else if (currentMode === 2) {
+        // 模式二：如果題目抽完了就再洗牌一次無限出題
+        if(currentIdx >= quizData.length) { quizData = shuffle(quizData); currentIdx = 0; }
+        renderQuestion();
+      } else {
+        endGame();
+      }
+    }, 1000);
+  } else {
+    btn.classList.add('wrong');
+    // 顯示正確答案
+    btns.forEach((b, i) => { if(LETTERS[i] === correct) b.classList.add('correct'); });
+    setTimeout(() => {
+      if(currentMode === 2) endGame();
+      else {
+        currentIdx++;
+        if(currentIdx < quizData.length) renderQuestion();
+        else endGame();
+      }
+    }, 1500);
   }
-
-  mode2Streak = 0;
-  mode2Running = true;
-  showPage('mode2-quiz');
-  startTimer();
-  renderMode2Question();
 }
 
-function renderMode2Question() {
-  document.getElementById('m2-streak').textContent = `🔥 連續：${mode2Streak}`;
-  const q = allQuestions[Math.floor(Math.random() * allQuestions.length)];
-  answered = false;
-  document.getElementById('m2-question-area').innerHTML = buildQuestionHTML(q, 'm2');
+function startTimer() {
+  clearInterval(timerInt);
+  timerInt = setInterval(() => {
+    timerSec++;
+    const m = Math.floor(timerSec / 60).toString().padStart(2, '0');
+    const s = (timerSec % 60).toString().padStart(2, '0');
+    document.getElementById('timer').innerText = `⏱ ${m}:${s}`;
+  }, 1000);
 }
 
-function m2Answer(btn, chosen, correct) {
-  if (answered || !mode2Running) return;
-  answered = true;
-  const isCorrect = chosen === correct;
-  highlightAnswer(btn, chosen, correct, 'm2');
+async function endGame() {
+  clearInterval(timerInt);
+  const user = currentMode === 1 ? document.getElementById('m1-user').value : document.getElementById('m2-user').value;
+  const payload = {
+    action: currentMode === 1 ? 'saveMode1' : 'saveMode2',
+    username: user || '匿名',
+    score: correctCount, // 模式一用這個
+    streak: correctCount, // 模式二用這個
+    timeSeconds: timerSec,
+    categories: selectedCats.join(',')
+  };
 
-  setTimeout(async () => {
-    if (isCorrect) {
-      mode2Streak++;
-      renderMode2Question();
-    } else {
-      mode2Running = false;
-      const seconds = stopTimer();
-      const username = document.getElementById('m2-username').value.trim() || '匿名';
-      document.getElementById('m2-streak-display').textContent = mode2Streak;
-      document.getElementById('m2-stat-time').textContent = formatTime(seconds);
-      document.getElementById('m2-stat-user').textContent = username;
-      showPage('mode2-result');
-
-      await postRecord('saveMode2', {
-        username, streak: mode2Streak, timeSeconds: Math.round(seconds)
-      });
-    }
-  }, 1200);
-}
-
-// ================================================
-// Shared question builder
-// ================================================
-const LETTERS = ['A','B','C','D'];
-
-function buildQuestionHTML(q, mode) {
-  const optionsHTML = q.options.map((opt, i) => {
-    const letter = LETTERS[i];
-    return `<button class="option-btn" onclick="${mode}Answer(this,'${letter}','${q.answer}')">
-      <span class="opt-letter">${letter}</span>
-      <span>${opt}</span>
-    </button>`;
-  }).join('');
-
-  return `
-    <div class="question-card">
-      <span class="question-cat">${catEmoji(q.category)} ${q.category}</span>
-      <div class="question-text">${q.question}</div>
-      <div class="options-list">${optionsHTML}</div>
-      <div id="feedback-text" style="display:none"></div>
-    </div>`;
-}
-
-function highlightAnswer(clickedBtn, chosen, correct, mode) {
-  const area = document.getElementById(`${mode}-question-area`);
-  const btns = area.querySelectorAll('.option-btn');
-  const isCorrect = chosen === correct;
-
-  btns.forEach((btn, i) => {
-    btn.disabled = true;
-    if (LETTERS[i] === correct) btn.classList.add('correct');
-    else if (LETTERS[i] === chosen && !isCorrect) btn.classList.add('wrong');
+  alert(`測驗結束！\n模式：${currentMode === 1 ? '練習' : '挑戰'}\n成績：${correctCount}\n時間：${timerSec} 秒`);
+  
+  await fetch(API_URL, {
+    method: 'POST',
+    mode: 'no-cors', // 避免 GAS 的跨網域問題
+    body: JSON.stringify(payload)
   });
-
-  const fb = document.getElementById('feedback-text');
-  if (fb) {
-    fb.style.display = 'block';
-    fb.className = 'feedback-text ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
-    fb.textContent = isCorrect ? '✅ 答對了！' : `❌ 答錯了！正確答案是 ${correct}`;
-  }
+  
+  showPage('home');
 }
 
-// ================================================
-// Leaderboard
-// ================================================
 async function loadLeaderboard() {
-  document.getElementById('lb-content').innerHTML =
-    '<div class="loading"><div class="spinner"></div> 載入中…</div>';
+  const body = document.getElementById('lb-body');
+  body.innerHTML = '<tr><td colspan="4" class="text-center">載入中...</td></tr>';
   try {
-    const data = await fetchLeaderboard();
-    renderLeaderboard(data);
-    document.getElementById('lb-update-time').textContent =
-      '最後更新：' + new Date().toLocaleTimeString('zh-TW');
-  } catch(e) {
-    document.getElementById('lb-content').innerHTML =
-      `<div class="empty-state"><div class="icon">⚠️</div><p>載入失敗：${e.message}</p></div>`;
+    const resp = await fetch(`${API_URL}?action=getLeaderboard`);
+    const data = await resp.json();
+    body.innerHTML = data.leaderboard.map(u => `
+      <tr>
+        <td>${u.rank}</td>
+        <td>${u.username}</td>
+        <td class="text-danger fw-bold">${u.streak}</td>
+        <td>${u.timeSeconds}s</td>
+      </tr>
+    `).join('');
+  } catch(e) { body.innerHTML = '<tr><td colspan="4" class="text-center">暫無數據</td></tr>'; }
+}
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
   }
+  return array;
 }
-
-function renderLeaderboard(entries) {
-  if (!entries || entries.length === 0) {
-    document.getElementById('lb-content').innerHTML =
-      '<div class="empty-state"><div class="icon">🏆</div><p>還沒有紀錄，快去挑戰模式二！</p></div>';
-    return;
-  }
-
-  const rows = entries.map(e => {
-    const rankClass = e.rank === 1 ? 'rank-1' : e.rank === 2 ? 'rank-2' : e.rank === 3 ? 'rank-3' : '';
-    const medal = e.rank === 1 ? '🥇' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : e.rank;
-    return `<tr>
-      <td><span class="${rankClass}">${medal}</span></td>
-      <td><strong>${escHtml(e.username)}</strong></td>
-      <td><span style="color:var(--orange);font-weight:800">${e.streak}</span> 題</td>
-      <td>${formatTime(e.timeSeconds)}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('lb-content').innerHTML = `
-    <table class="lb-table">
-      <thead><tr><th>排名</th><th>名字</th><th>連續答對</th><th>時間</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-}
-
-// ================================================
-// Demo data (used when API not configured)
-// ================================================
-function getDemoQuestions(categories) {
-  const all = [
-    {id:1, category:'土壤與農業', question:'下列哪種土壤最適合種植水稻？', options:['砂質土','黏質土','壤土','石礫土'], answer:'B'},
-    {id:2, category:'土壤與農業', question:'有機農業最主要的特徵是什麼？', options:['大量使用化學農藥','不使用合成農藥和化肥','大規模機械耕作','使用基因改造種子'], answer:'B'},
-    {id:3, category:'食物與營養', question:'下列哪種食物富含蛋白質？', options:['白米飯','黃豆','馬鈴薯','蘿蔔'], answer:'B'},
-    {id:4, category:'食物與營養', question:'台灣的主食是什麼？', options:['小麥','玉米','稻米','大麥'], answer:'C'},
-    {id:5, category:'環境與生態', question:'農業中的「輪作」主要目的是？', options:['增加收入','維持土壤健康','節省時間','減少人力'], answer:'B'},
-    {id:6, category:'環境與生態', question:'下列哪種行為最有助於減少食物浪費？', options:['購買大量食材','按需採購和烹飪','只吃進口食品','大量使用一次性餐具'], answer:'B'},
-    {id:7, category:'產地與季節', question:'台灣草莓的主要產地是哪裡？', options:['屏東','苗栗','宜蘭','花蓮'], answer:'B'},
-    {id:8, category:'產地與季節', question:'台灣的稻米通常一年可收穫幾次？', options:['一次','兩次','三次','四次'], answer:'B'},
-    {id:9, category:'食品安全', question:'食品標示上的「有效日期」過期後應如何處理？', options:['立即丟棄','若看起來正常可食用','視食品種類與保存狀況判斷','加熱後可食用'], answer:'C'},
-    {id:10, category:'食品安全', question:'下列哪種方式最能有效預防食物中毒？', options:['食物放久一點再吃','保持食物新鮮和適當溫度','只吃生食','不洗手直接料理'], answer:'B'},
-    {id:11, category:'土壤與農業', question:'農作物的「輪作」是指什麼？', options:['同一塊地種同一種作物','同一塊地依序種不同作物','同時種植多種作物','在不同農地輪流耕作'], answer:'B'},
-    {id:12, category:'食物與營養', question:'維生素C含量最豐富的蔬果是？', options:['香蕉','芭樂','蘋果','西瓜'], answer:'B'},
-    {id:13, category:'環境與生態', question:'「友善農業」最主要強調什麼？', options:['高產量','生態環境友善','低成本','快速生長'], answer:'B'},
-    {id:14, category:'產地與季節', question:'台灣的蓮霧主要產地是哪裡？', options:['苗栗','屏東','花蓮','南投'], answer:'B'},
-    {id:15, category:'食品安全', question:'冷藏食品應保存在幾度以下？', options:['10°C','7°C','4°C','0°C'], answer:'B'},
-  ];
-
-  if (!categories || categories.length === 0) return all;
-  return all.filter(q => categories.includes(q.category));
-}
-
-function getDemoLeaderboard() {
-  return [
-    {rank:1, username:'農業達人', streak:25, timeSeconds:312, date:'2026-04-01'},
-    {rank:2, username:'食農小王子', streak:18, timeSeconds:245, date:'2026-04-01'},
-    {rank:3, username:'綠色勇士', streak:18, timeSeconds:289, date:'2026-03-31'},
-    {rank:4, username:'蔬菜博士', streak:12, timeSeconds:178, date:'2026-04-01'},
-    {rank:5, username:'土地守護者', streak:10, timeSeconds:203, date:'2026-03-30'},
-  ];
-}
-
-// ================================================
-// Utils
-// ================================================
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i+1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function showConfig() {
-  showToast('請在 index.html 的 API_URL 填入你的 Apps Script URL');
-}
-
-// ================================================
-// Init
-// ================================================
-initCatGrid();
-
-// Check config
-if (API_URL.includes('YOUR_')) {
-  document.getElementById('config-banner').style.display = 'flex';
-}
-
-// Auto-refresh leaderboard every 60s when on leaderboard page
-setInterval(() => {
-  if (document.getElementById('page-leaderboard').classList.contains('active')) {
-    loadLeaderboard();
-  }
-}, 60000);
 </script>
 </body>
 </html>
