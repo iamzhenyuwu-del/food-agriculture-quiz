@@ -39,36 +39,37 @@
   </div>
 </div>
 
+<!-- 首頁 -->
 <div id="page-home" class="page active text-center">
   <div class="card">
     <h3 class="mb-2" style="color: var(--green);">歡迎參加大考驗</h3>
-    <p class="text-muted mb-4">請選擇測驗模式開始你的食農知識之旅</p>
+    <p class="text-muted mb-4">按單元選題，依序練習</p>
     <button class="btn btn-success btn-lg w-100 py-4 mode-btn" style="font-size: 1.5rem; font-weight: bold;" onclick="showPage('mode1-setup')">📝 單元練習</button>
   </div>
   <div class="card">
-    <h3 class="mb-2" style="color: var(--orange);">歡迎參加大考驗</h3>
-    <p class="text-muted mb-4">請選擇測驗模式開始你的食農知識之旅</p>
+    <h3 class="mb-2" style="color: var(--orange);">挑戰極限</h3>
+    <p class="text-muted mb-4">隨機出題，答錯即結束，成績排入排行榜</p>
     <button class="btn btn-warning btn-lg w-100 py-4 mode-btn" style="font-size: 1.5rem; font-weight: bold;" onclick="showPage('mode2-setup')">🔥 挑戰模式</button>
   </div>
 </div>
 
+<!-- 模式一設定 -->
 <div id="page-mode1-setup" class="page">
   <div class="card">
     <h4>📝 單元練習設定</h4>
     <input type="text" id="m1-user" class="form-control mb-4" placeholder="請輸入你的名字">
-    <h6>選擇單元 (顯示總題數)：</h6>
+    <h6>選擇單元：</h6>
     <div id="cat-container" class="mb-4">正在載入單元資訊...</div>
-    
     <div id="limit-container" style="display:none;">
       <label class="form-label fw-bold">選擇練習題數：</label>
-      <input type="number" id="m1-limit" class="form-control mb-3" min="1" value="0">
+      <input type="number" id="m1-limit" class="form-control mb-2" min="1" value="0">
       <p class="small text-muted" id="m1-max-info"></p>
     </div>
-    
     <button class="btn btn-primary w-100 py-3 fw-bold" style="font-size: 1.2rem;" onclick="startMode1()">開始測驗</button>
   </div>
 </div>
 
+<!-- 模式二設定 -->
 <div id="page-mode2-setup" class="page">
   <div class="card text-center">
     <h4>🔥 挑戰模式設定</h4>
@@ -78,6 +79,7 @@
   </div>
 </div>
 
+<!-- 測驗頁面 -->
 <div id="page-quiz" class="page">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div id="quiz-info" class="fw-bold fs-5">載入中...</div>
@@ -94,19 +96,22 @@
     <h5 id="q-text" class="lh-base mb-4">題目載入中...</h5>
     <div id="options-container"></div>
     <div id="explanation-box" class="explanation-box"></div>
-    <button id="next-btn" class="btn btn-primary w-100 mt-3" style="display:none;" onclick="nextQuestion()">下一題</button>
+    <button id="next-btn" class="btn btn-primary w-100 mt-3" style="display:none;" onclick="nextQuestion()">下一題 ▶</button>
   </div>
 </div>
 
+<!-- 結果頁面 -->
 <div id="page-result" class="page text-center">
   <div class="card">
     <h2 id="res-title">測驗結束！</h2>
     <div class="display-1 fw-bold text-success my-4" id="res-score">0</div>
     <p id="res-detail" class="fs-5 mb-4"></p>
     <button class="btn btn-success btn-lg w-100 py-3 mb-3" onclick="showPage('home')">回到首頁</button>
+    <button class="btn btn-outline-primary w-100 py-2" onclick="showPage('leaderboard')">查看排行榜</button>
   </div>
 </div>
 
+<!-- 排行榜 -->
 <div id="page-leaderboard" class="page">
   <div class="card">
     <h4 class="text-center mb-4">🏆 挑戰模式排行榜 (前100)</h4>
@@ -121,7 +126,9 @@
 </div>
 
 <script>
+// ★ 每次重新部署 Apps Script 後，請更新此 URL ★
 const API_URL = 'https://script.google.com/macros/s/AKfycbx_flL8HfLfsIy5MD99w9n9MTglGE_nIpvy2LBt-M6zI1YfuntjcONv6ATTGBRYBa6c/exec';
+
 const CATEGORIES = ['第一單元：⼤學社會責任USR', '第二單元：永續發展⽬標SDGs', '第三單元：食農教育', '第四單元：產銷履歷', '第五單元：有機驗證', '第六單元：烏溪流域', '第七單元：農產品', '第八單元：相關課程'];
 const LETTERS = ['A', 'B', 'C', 'D'];
 
@@ -134,28 +141,33 @@ let currentMode = 1;
 let selectedCats = [];
 let catCounts = {};
 
-// 初始化
-window.onload = async () => {
+// ---- 初始化：載入各單元題數 ----
+window.onload = async function() {
   try {
-    const resp = await fetch(`${API_URL}?action=getCounts`);
+    const resp = await fetch(API_URL + '?action=getCounts');
     const data = await resp.json();
     catCounts = data.counts || {};
-    renderCategoryChips();
-  } catch (e) { console.error('無法載入單元資訊', e); }
+  } catch (e) {
+    console.warn('無法載入單元題數', e);
+  }
+  renderCategoryChips();
 };
 
 function renderCategoryChips() {
   const container = document.getElementById('cat-container');
   container.innerHTML = '';
-  CATEGORIES.forEach(cat => {
+  CATEGORIES.forEach(function(cat) {
     const count = catCounts[cat] || 0;
     const span = document.createElement('span');
     span.className = 'cat-chip';
-    span.innerHTML = `${cat} <span class="badge bg-secondary ms-1">${count}題</span>`;
-    span.onclick = () => {
+    span.innerHTML = cat + ' <span class="badge bg-secondary ms-1">' + count + ' 題</span>';
+    span.onclick = function() {
       span.classList.toggle('selected');
-      if (span.classList.contains('selected')) selectedCats.push(cat);
-      else selectedCats = selectedCats.filter(c => c !== cat);
+      if (span.classList.contains('selected')) {
+        selectedCats.push(cat);
+      } else {
+        selectedCats = selectedCats.filter(function(c) { return c !== cat; });
+      }
       updateQuestionLimit();
     };
     container.appendChild(span);
@@ -166,128 +178,158 @@ function updateQuestionLimit() {
   const limitBox = document.getElementById('limit-container');
   const limitInput = document.getElementById('m1-limit');
   const maxInfo = document.getElementById('m1-max-info');
-  
   let total = 0;
-  selectedCats.forEach(c => total += (catCounts[c] || 0));
-  
+  selectedCats.forEach(function(c) { total += (catCounts[c] || 0); });
   if (total > 0) {
     limitBox.style.display = 'block';
     limitInput.max = total;
     limitInput.value = total;
-    maxInfo.innerText = `目前選定範圍共有 ${total} 題`;
+    maxInfo.innerText = '目前選定範圍共有 ' + total + ' 題';
   } else {
     limitBox.style.display = 'none';
   }
 }
 
+// ---- 換頁 ----
 function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.getElementById('page-' + id).classList.add('active');
   if (id === 'leaderboard') loadLeaderboard();
   window.scrollTo(0, 0);
 }
 
+// ---- 模式一開始 ----
 async function startMode1() {
-  const limit = parseInt(document.getElementById('m1-limit').value);
-  if (selectedCats.length === 0) return alert('請選擇單元');
+  if (selectedCats.length === 0) { alert('請選擇單元'); return; }
+  const limit = parseInt(document.getElementById('m1-limit').value) || 9999;
   currentMode = 1;
   await loadQuestions(selectedCats.join(','), limit);
 }
 
+// ---- 模式二開始 ----
 async function startMode2() {
   const user = document.getElementById('m2-user').value;
-  if (!user) return alert('請輸入名字');
+  if (!user) { alert('請輸入名字'); return; }
   currentMode = 2;
   await loadQuestions('', 9999);
 }
 
+// ---- 載入題目 ----
 async function loadQuestions(catStr, limit) {
   showPage('quiz');
   document.getElementById('q-text').innerText = '題目準備中...';
+  document.getElementById('options-container').innerHTML = '';
+  document.getElementById('explanation-box').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
   document.getElementById('timer').style.display = currentMode === 1 ? 'none' : 'block';
-  
+
   try {
-    const resp = await fetch(`${API_URL}?action=getQuestions&category=${encodeURIComponent(catStr)}`);
+    const resp = await fetch(API_URL + '?action=getQuestions&category=' + encodeURIComponent(catStr));
     const data = await resp.json();
-    quizData = shuffle(data.questions).slice(0, limit);
-    
+
+    // ★ 修正：先檢查後端是否回傳錯誤
+    if (data.error) {
+      alert('後端錯誤：' + data.error);
+      showPage('home');
+      return;
+    }
+
+    const allQuestions = data.questions || [];
+    if (allQuestions.length === 0) {
+      alert('資料庫目前沒有這類題目！');
+      showPage('home');
+      return;
+    }
+
+    quizData = shuffle(allQuestions).slice(0, limit);
     currentIdx = 0;
     correctCount = 0;
+    timerSec = 0;
     if (currentMode === 2) startTimer();
     renderQuestion();
-  } catch (e) { alert('載入失敗'); showPage('home'); }
+
+  } catch (e) {
+    alert('連線失敗，請稍後再試。\n' + e);
+    showPage('home');
+  }
 }
 
+// ---- 顯示題目 ----
 function renderQuestion() {
   const q = quizData[currentIdx];
   const info = document.getElementById('quiz-info');
   const progressBar = document.getElementById('progress-bar');
-  const nextBtn = document.getElementById('next-btn');
-  const explBox = document.getElementById('explanation-box');
-  
-  nextBtn.style.display = 'none';
-  explBox.style.display = 'none';
+
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('explanation-box').style.display = 'none';
 
   if (currentMode === 1) {
-    const completed = currentIdx;
-    const total = quizData.length;
-    const remaining = total - completed;
-    info.innerHTML = `已做：${completed} 題 | <span class="text-primary">剩餘：${remaining} 題</span>`;
-    progressBar.style.width = `${(completed / total) * 100}%`;
+    info.innerHTML = '已做：' + currentIdx + ' 題 | <span class="text-primary">剩餘：' + (quizData.length - currentIdx) + ' 題</span>';
+    progressBar.style.width = ((currentIdx / quizData.length) * 100) + '%';
+    progressBar.className = 'progress-bar bg-success progress-bar-striped';
   } else {
-    info.innerText = `連續答對：${correctCount} 題`;
+    info.innerText = '連續答對：' + correctCount + ' 題';
     progressBar.style.width = '100%';
     progressBar.className = 'progress-bar bg-danger progress-bar-striped progress-bar-animated';
   }
 
-  document.getElementById('q-id').innerText = `題號：${q.id || '-'}`;
+  document.getElementById('q-id').innerText = '題號：' + (q.id || '-');
+
   const diff = document.getElementById('q-difficulty');
-  diff.innerText = q.difficulty;
-  diff.className = 'difficulty-badge ' + (q.difficulty.includes('易') ? 'difficulty-easy' : q.difficulty.includes('中') ? 'difficulty-medium' : 'difficulty-hard');
-  
-  document.getElementById('q-text').innerText = `[${q.category}] ${q.question}`;
-  
+  diff.innerText = q.difficulty || '-';
+  if (q.difficulty && (q.difficulty.includes('易') || q.difficulty.includes('簡'))) {
+    diff.className = 'difficulty-badge difficulty-easy';
+  } else if (q.difficulty && q.difficulty.includes('中')) {
+    diff.className = 'difficulty-badge difficulty-medium';
+  } else {
+    diff.className = 'difficulty-badge difficulty-hard';
+  }
+
+  document.getElementById('q-text').innerText = '[' + q.category + '] ' + q.question;
+
   const container = document.getElementById('options-container');
   container.innerHTML = '';
-  q.options.forEach((opt, i) => {
+  q.options.forEach(function(opt, i) {
     const btn = document.createElement('button');
     btn.className = 'option-btn';
-    btn.innerHTML = `<b>${LETTERS[i]}.</b> ${opt}`;
-    btn.onclick = () => checkAnswer(LETTERS[i], q.answer, btn);
+    btn.innerHTML = '<b>' + LETTERS[i] + '.</b> ' + opt;
+    btn.onclick = function() { checkAnswer(LETTERS[i], q.answer, btn); };
     container.appendChild(btn);
   });
 }
 
+// ---- 檢查答案 ----
 function checkAnswer(chosen, correct, btn) {
   const btns = document.querySelectorAll('.option-btn');
   const q = quizData[currentIdx];
-  btns.forEach(b => b.disabled = true);
-  
+  btns.forEach(function(b) { b.disabled = true; });
+
   const isCorrect = (chosen === correct);
-  
+
   if (isCorrect) {
     btn.classList.add('correct');
     correctCount++;
-    setTimeout(() => nextQuestion(), 800);
+    setTimeout(function() { nextQuestion(); }, 800);
   } else {
     btn.classList.add('wrong');
-    // 正確選項亮綠燈
-    btns.forEach((b, i) => { if (LETTERS[i] === correct) b.classList.add('correct'); });
-    
-    // 顯示解釋
+    btns.forEach(function(b, i) {
+      if (LETTERS[i] === correct) b.classList.add('correct');
+    });
+
+    // 顯示說明
     const explBox = document.getElementById('explanation-box');
-    explBox.innerHTML = `<strong>📌 說明：</strong><br>${q.explanation || '無說明資料'}`;
+    explBox.innerHTML = '<strong>📌 說明：</strong><br>' + (q.explanation || '無說明資料');
     explBox.style.display = 'block';
-    
-    // 顯示下一題按鈕（如果是單元練習）
+
     if (currentMode === 1) {
-      document.getElementById('next-btn').style.display = 'block';
+      document.getElementById('next-btn').style.display = 'block'; // 單元練習：按按鈕繼續
     } else {
-      setTimeout(() => endGame(), 2500); // 挑戰模式答錯，看一眼說明後結束
+      setTimeout(function() { endGame(); }, 2500); // 挑戰模式：看完說明自動結束
     }
   }
 }
 
+// ---- 下一題 ----
 function nextQuestion() {
   currentIdx++;
   if (currentIdx < quizData.length) {
@@ -297,48 +339,87 @@ function nextQuestion() {
   }
 }
 
+// ---- 計時器 ----
 function startTimer() {
   if (timerInt) clearInterval(timerInt);
   timerSec = 0;
-  timerInt = setInterval(() => {
+  timerInt = setInterval(function() {
     timerSec++;
-    const m = Math.floor(timerSec / 60).toString().padStart(2, '0');
-    const s = (timerSec % 60).toString().padStart(2, '0');
-    document.getElementById('timer').innerText = `⏱ ${m}:${s}`;
+    var m = Math.floor(timerSec / 60).toString().padStart(2, '0');
+    var s = (timerSec % 60).toString().padStart(2, '0');
+    document.getElementById('timer').innerText = '⏱ ' + m + ':' + s;
   }, 1000);
 }
 
+// ---- 結束測驗 ----
 async function endGame() {
-  if (timerInt) clearInterval(timerInt);
-  const user = (currentMode === 1 ? document.getElementById('m1-user').value : document.getElementById('m2-user').value) || '匿名';
-  
+  if (timerInt) { clearInterval(timerInt); timerInt = null; }
+
+  const user = (currentMode === 1
+    ? document.getElementById('m1-user').value
+    : document.getElementById('m2-user').value) || '匿名';
+
   document.getElementById('res-title').innerText = currentMode === 1 ? '單元練習完成！' : '挑戰結束！';
-  document.getElementById('res-score').innerText = currentMode === 1 ? `${correctCount} / ${quizData.length}` : correctCount;
-  document.getElementById('res-detail').innerText = `玩家：${user}${currentMode === 2 ? ` | 耗時：${timerSec}秒` : ''}`;
-  
+  document.getElementById('res-score').innerText = currentMode === 1
+    ? correctCount + ' / ' + quizData.length
+    : correctCount + ' 題';
+  document.getElementById('res-detail').innerText = '玩家：' + user +
+    (currentMode === 2 ? ' | 耗時：' + timerSec + ' 秒' : '');
+
   showPage('result');
 
-  const payload = {
-    action: currentMode === 1 ? 'saveMode1' : 'saveMode2',
-    username: user,
-    score: correctCount,
-    streak: correctCount,
-    timeSeconds: timerSec
-  };
+  // 儲存紀錄
+  var payload;
+  if (currentMode === 1) {
+    payload = {
+      action:      'saveMode1',
+      username:    user,
+      categories:  selectedCats.join(','),
+      score:       correctCount,
+      total:       quizData.length,
+      timeSeconds: timerSec
+    };
+  } else {
+    payload = {
+      action:      'saveMode2',
+      username:    user,
+      streak:      correctCount,
+      timeSeconds: timerSec
+    };
+  }
 
-  fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    console.warn('儲存紀錄失敗:', e);
+  }
 }
 
+// ---- 載入排行榜 ----
 async function loadLeaderboard() {
   const body = document.getElementById('lb-body');
-  body.innerHTML = '<tr><td colspan="4">載入中...</td></tr>';
+  body.innerHTML = '<tr><td colspan="4" class="text-center">載入中...</td></tr>';
   try {
-    const resp = await fetch(`${API_URL}?action=getLeaderboard`);
+    const resp = await fetch(API_URL + '?action=getLeaderboard');
     const data = await resp.json();
-    body.innerHTML = data.leaderboard.map(u => `<tr><td>${u.rank === 1 ? '🥇' : u.rank === 2 ? '🥈' : u.rank === 3 ? '🥉' : u.rank}</td><td>${u.username}</td><td class="text-danger fw-bold">${u.streak}</td><td>${u.timeSeconds}s</td></tr>`).join('');
-  } catch(e) { body.innerHTML = '<tr><td colspan="4">暫無數據</td></tr>'; }
+    if (!data.leaderboard || data.leaderboard.length === 0) {
+      body.innerHTML = '<tr><td colspan="4" class="text-center">暫無數據</td></tr>';
+      return;
+    }
+    body.innerHTML = data.leaderboard.map(function(u) {
+      var rankStr = u.rank === 1 ? '🥇' : u.rank === 2 ? '🥈' : u.rank === 3 ? '🥉' : u.rank;
+      return '<tr><td>' + rankStr + '</td><td>' + u.username + '</td><td class="text-danger fw-bold">' + u.streak + '</td><td>' + u.timeSeconds + 's</td></tr>';
+    }).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="4" class="text-center">暫無數據</td></tr>';
+  }
 }
 
+// ---- 洗牌 ----
 function shuffle(array) {
   const a = array.slice();
   for (let i = a.length - 1; i > 0; i--) {
