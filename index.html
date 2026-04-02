@@ -243,7 +243,7 @@ async function loadQuestions(catStr, limit) {
     currentIdx = 0;
     correctCount = 0;
     timerSec = 0;
-    if (currentMode === 2) startTimer();
+    startTimer();
     renderQuestion();
 
   } catch (e) {
