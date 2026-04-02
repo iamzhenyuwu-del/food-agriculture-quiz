@@ -105,7 +105,8 @@
     <h2 id="res-title">測驗結束！</h2>
     <div class="display-1 fw-bold text-success my-4" id="res-score">0</div>
     <p id="res-detail" class="fs-5 mb-4"></p>
-    <button class="btn btn-success btn-lg w-100 py-3 mb-3" onclick="showPage('home')">回到首頁</button>
+    
+    <button id="btn-play-again" class="btn btn-success btn-lg w-100 py-3 mb-3 fw-bold fs-4">再一次</button>
     <button class="btn btn-outline-primary w-100 py-2" onclick="showPage('leaderboard')">查看排行榜</button>
   </div>
 </div>
@@ -139,7 +140,6 @@ let currentMode = 1;
 let selectedCats = [];
 let catCounts = {};
 
-// ---- 初始化：載入各單元題數 ----
 window.onload = async function() {
   try {
     const resp = await fetch(API_URL + '?action=getCounts');
@@ -196,15 +196,19 @@ function showPage(id) {
 }
 
 async function startMode1() {
+  const user = document.getElementById('m1-user').value.trim();
+  if (!user) { alert('請輸入你的名字'); return; }
   if (selectedCats.length === 0) { alert('請選擇單元'); return; }
+  
   const limit = parseInt(document.getElementById('m1-limit').value) || 9999;
   currentMode = 1;
   await loadQuestions(selectedCats.join(','), limit);
 }
 
 async function startMode2() {
-  const user = document.getElementById('m2-user').value;
+  const user = document.getElementById('m2-user').value.trim();
   if (!user) { alert('請輸入名字'); return; }
+  
   currentMode = 2;
   await loadQuestions('', 9999);
 }
@@ -350,9 +354,10 @@ function startTimer() {
 
 async function endGame() {
   if (timerInt) { clearInterval(timerInt); timerInt = null; }
+  
   const user = (currentMode === 1
-    ? document.getElementById('m1-user').value
-    : document.getElementById('m2-user').value) || '匿名';
+    ? document.getElementById('m1-user').value.trim()
+    : document.getElementById('m2-user').value.trim()) || '匿名';
 
   document.getElementById('res-title').innerText = currentMode === 1 ? '單元練習完成！' : '挑戰結束！';
   document.getElementById('res-score').innerText = currentMode === 1
@@ -360,6 +365,13 @@ async function endGame() {
     : correctCount + ' 題';
   document.getElementById('res-detail').innerText = '玩家：' + user +
     (currentMode === 2 ? ' | 耗時：' + timerSec + ' 秒' : '');
+
+  const btnPlayAgain = document.getElementById('btn-play-again');
+  if (currentMode === 1) {
+    btnPlayAgain.onclick = function() { showPage('mode1-setup'); };
+  } else {
+    btnPlayAgain.onclick = function() { startMode2(); };
+  }
 
   showPage('result');
 
