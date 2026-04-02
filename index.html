@@ -12,13 +12,16 @@
   .page { display: none; max-width: 700px; margin: 0 auto; padding: 15px; }
   .active { display: block; }
   .card { border-radius: var(--radius); border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 15px; }
-  .option-btn { display: block; width: 100%; text-align: left; padding: 12px 15px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; transition: 0.2s; }
+  .option-btn { display: block; width: 100%; text-align: left; padding: 12px 15px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; transition: 0.2s; font-size: 1rem; }
   .option-btn:hover:not(:disabled) { border-color: var(--green-light); background: #f1f8e9; }
   .correct { background: #e8f5e9 !important; border-color: #4caf50 !important; color: #2e7d32; font-weight: bold; }
   .wrong { background: #ffebee !important; border-color: #f44336 !important; color: #c62828; }
-  .cat-chip { display: inline-block; padding: 8px 15px; border: 2px solid #ddd; border-radius: 20px; margin: 5px; cursor: pointer; }
+  .cat-chip { display: inline-block; padding: 8px 15px; border: 2px solid #ddd; border-radius: 20px; margin: 5px; cursor: pointer; user-select: none; }
   .cat-chip.selected { background: var(--green-light); color: white; border-color: var(--green); }
   .timer { font-size: 1.2rem; font-weight: bold; color: var(--orange); }
+  .result-card { text-align: center; }
+  .result-card h2 { color: var(--green); }
+  .result-card .score { font-size: 3rem; font-weight: bold; color: var(--orange); }
 </style>
 </head>
 <body>
@@ -31,6 +34,7 @@
   </div>
 </div>
 
+<!-- 首頁 -->
 <div id="page-home" class="page active text-center">
   <div class="card">
     <h3>歡迎參加考驗</h3>
@@ -40,6 +44,7 @@
   </div>
 </div>
 
+<!-- 模式一設定 -->
 <div id="page-mode1-setup" class="page">
   <div class="card">
     <h4>📝 模式一設定</h4>
@@ -50,6 +55,7 @@
   </div>
 </div>
 
+<!-- 模式二設定 -->
 <div id="page-mode2-setup" class="page">
   <div class="card">
     <h4>🔥 模式二：生存挑戰</h4>
@@ -59,6 +65,7 @@
   </div>
 </div>
 
+<!-- 測驗頁面 -->
 <div id="page-quiz" class="page">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div id="quiz-info" class="fw-bold">載入中...</div>
@@ -73,6 +80,19 @@
   </div>
 </div>
 
+<!-- 結果頁面 -->
+<div id="page-result" class="page">
+  <div class="card result-card">
+    <h2>測驗結束！</h2>
+    <div id="result-mode" class="mb-2"></div>
+    <div class="score" id="result-score">0</div>
+    <div id="result-detail" class="mb-3"></div>
+    <button class="btn btn-success btn-lg w-100 mb-2" onclick="showPage('home')">回首頁</button>
+    <button class="btn btn-outline-primary w-100" onclick="showPage('leaderboard')">查看排行榜</button>
+  </div>
+</div>
+
+<!-- 排行榜 -->
 <div id="page-leaderboard" class="page">
   <div class="card">
     <h4>🏆 生存模式排行榜 (前100)</h4>
@@ -85,7 +105,10 @@
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbyeIH0T4aE45wbwH1GpuxLr-lp2SfWmavhBWKkH-ezYozOMZbWUZnZpk_Sa_s7-2gp4/exec';
+// ====================================================
+// 重要：部署新版 Apps Script 後，請更新此 URL
+// ====================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycby-fuw_aAwfK4DrtmH6NpXtiS5wGNBOFyRnQvm3mfrVIXB5UinHr_wXr6mVPiu7S3Jh/exec';
 
 const CATEGORIES = ['土壤與農業', '食物與營養', '環境與生態', '產地與季節', '食品安全'];
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -94,59 +117,257 @@ let quizData = [];
 let currentIdx = 0;
 let correctCount = 0;
 let timerSec = 0;
-let timerInt;
+let timerInt = null;
 let currentMode = 1;
 let selectedCats = [];
 
+// ---- 初始化分類選擇 ----
 const catBox = document.getElementById('cat-container');
-CATEGORIES.forEach(cat => {
-  const span = document.createElement('span');
+CATEGORIES.forEach(function(cat) {
+  var span = document.createElement('span');
   span.className = 'cat-chip';
   span.innerText = cat;
-  span.onclick = () => {
+  span.onclick = function() {
     span.classList.toggle('selected');
-    if(span.classList.contains('selected')) selectedCats.push(cat);
-    else selectedCats = selectedCats.filter(c => c !== cat);
+    if (span.classList.contains('selected')) {
+      selectedCats.push(cat);
+    } else {
+      selectedCats = selectedCats.filter(function(c) { return c !== cat; });
+    }
   };
   catBox.appendChild(span);
 });
 
+// ---- 換頁 ----
 function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.getElementById('page-' + id).classList.add('active');
-  if(id === 'leaderboard') loadLeaderboard();
+  if (id === 'leaderboard') loadLeaderboard();
 }
 
+// ---- 模式一開始 ----
 async function startMode1() {
-  if(selectedCats.length === 0) return alert('請至少選擇一個大類');
+  if (selectedCats.length === 0) { alert('請至少選擇一個大類'); return; }
   currentMode = 1;
   await loadQuestions(selectedCats.join(','));
 }
 
+// ---- 模式二開始 ----
 async function startMode2() {
-  const user = document.getElementById('m2-user').value;
-  if(!user) return alert('請輸入挑戰者名字');
+  var user = document.getElementById('m2-user').value;
+  if (!user) { alert('請輸入挑戰者名字'); return; }
   currentMode = 2;
-  await loadQuestions(''); 
+  await loadQuestions('');
 }
 
+// ---- 載入題目 ----
 async function loadQuestions(catStr) {
   showPage('quiz');
-  document.getElementById('q-text').innerText = "題目載入中，請稍候...";
+  document.getElementById('q-text').innerText = '題目載入中，請稍候...';
+  document.getElementById('options-container').innerHTML = '';
+
   try {
-    const resp = await fetch(`${API_URL}?action=getQuestions&category=${encodeURIComponent(catStr)}`);
-    const data = await resp.json();
-    quizData = shuffle(data.questions);
-    if(quizData.length === 0) return alert('資料庫目前沒有這類題目！');
-    
+    var url = API_URL + '?action=getQuestions&category=' + encodeURIComponent(catStr);
+    var resp = await fetch(url);
+    var data = await resp.json();
+
+    if (data.error) {
+      alert('後端錯誤：' + data.error);
+      showPage('home');
+      return;
+    }
+
+    quizData = shuffle(data.questions || []);
+    if (quizData.length === 0) {
+      alert('資料庫目前沒有這類題目！');
+      showPage('home');
+      return;
+    }
+
     currentIdx = 0;
     correctCount = 0;
     timerSec = 0;
     startTimer();
     renderQuestion();
-  } catch(e) { alert('連線失敗：' + e); }
+  } catch (e) {
+    alert('連線失敗：' + e);
+    showPage('home');
+  }
 }
 
+// ---- 顯示題目 ----
 function renderQuestion() {
-  const q = quizData[currentIdx];
-  const info = document
+  var q = quizData[currentIdx];
+  var info = document.getElementById('quiz-info');
+
+  if (currentMode === 1) {
+    info.innerText = '進度：' + (currentIdx + 1) + ' / ' + quizData.length;
+    document.getElementById('progress-bar').style.width = ((currentIdx / quizData.length) * 100) + '%';
+  } else {
+    info.innerText = '連續答對：' + correctCount;
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('progress-bar').className = 'progress-bar bg-danger';
+  }
+
+  document.getElementById('q-text').innerText = '[' + q.category + '] ' + q.question;
+
+  var container = document.getElementById('options-container');
+  container.innerHTML = '';
+
+  q.options.forEach(function(opt, i) {
+    var btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = '<b>' + LETTERS[i] + '.</b> ' + opt;
+    btn.onclick = function() { checkAnswer(LETTERS[i], q.answer, btn); };
+    container.appendChild(btn);
+  });
+}
+
+// ---- 檢查答案 ----
+function checkAnswer(chosen, correct, btn) {
+  var btns = document.querySelectorAll('.option-btn');
+  btns.forEach(function(b) { b.disabled = true; });
+
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    correctCount++;
+    setTimeout(function() {
+      currentIdx++;
+      if (currentMode === 1 && currentIdx < quizData.length) {
+        renderQuestion();
+      } else if (currentMode === 2) {
+        if (currentIdx >= quizData.length) {
+          quizData = shuffle(quizData);
+          currentIdx = 0;
+        }
+        renderQuestion();
+      } else {
+        endGame();
+      }
+    }, 800);
+  } else {
+    btn.classList.add('wrong');
+    // 顯示正確答案
+    btns.forEach(function(b, i) {
+      if (LETTERS[i] === correct) b.classList.add('correct');
+    });
+    setTimeout(function() {
+      if (currentMode === 2) {
+        endGame();
+      } else {
+        currentIdx++;
+        if (currentIdx < quizData.length) {
+          renderQuestion();
+        } else {
+          endGame();
+        }
+      }
+    }, 1200);
+  }
+}
+
+// ---- 計時器 ----
+function startTimer() {
+  if (timerInt) clearInterval(timerInt);
+  timerSec = 0;
+  timerInt = setInterval(function() {
+    timerSec++;
+    var m = Math.floor(timerSec / 60).toString().padStart(2, '0');
+    var s = (timerSec % 60).toString().padStart(2, '0');
+    document.getElementById('timer').innerText = '⏱ ' + m + ':' + s;
+  }, 1000);
+}
+
+// ---- 結束測驗 ----
+async function endGame() {
+  clearInterval(timerInt);
+  timerInt = null;
+
+  var user = currentMode === 1
+    ? document.getElementById('m1-user').value
+    : document.getElementById('m2-user').value;
+
+  // 顯示結果頁面
+  if (currentMode === 1) {
+    document.getElementById('result-mode').innerText = '模式：分類練習';
+    document.getElementById('result-score').innerText = correctCount + ' / ' + quizData.length;
+    document.getElementById('result-detail').innerText = '花費時間：' + timerSec + ' 秒';
+  } else {
+    document.getElementById('result-mode').innerText = '模式：生存挑戰';
+    document.getElementById('result-score').innerText = correctCount;
+    document.getElementById('result-detail').innerText = '連續答對 ' + correctCount + ' 題，花費 ' + timerSec + ' 秒';
+  }
+  showPage('result');
+
+  // 儲存紀錄到 Google Sheets
+  var payload;
+  if (currentMode === 1) {
+    payload = {
+      action: 'saveMode1',
+      username: user || '匿名',
+      categories: selectedCats.join(','),
+      score: correctCount,
+      total: quizData.length,
+      timeSeconds: timerSec
+    };
+  } else {
+    payload = {
+      action: 'saveMode2',
+      username: user || '匿名',
+      streak: correctCount,
+      timeSeconds: timerSec
+    };
+  }
+
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    console.warn('儲存紀錄失敗:', e);
+  }
+}
+
+// ---- 載入排行榜 ----
+async function loadLeaderboard() {
+  var body = document.getElementById('lb-body');
+  body.innerHTML = '<tr><td colspan="4" class="text-center">載入中...</td></tr>';
+
+  try {
+    var resp = await fetch(API_URL + '?action=getLeaderboard');
+    var data = await resp.json();
+
+    if (!data.leaderboard || data.leaderboard.length === 0) {
+      body.innerHTML = '<tr><td colspan="4" class="text-center">暫無數據</td></tr>';
+      return;
+    }
+
+    body.innerHTML = data.leaderboard.map(function(u) {
+      return '<tr>' +
+        '<td>' + u.rank + '</td>' +
+        '<td>' + u.username + '</td>' +
+        '<td class="text-danger fw-bold">' + u.streak + '</td>' +
+        '<td>' + u.timeSeconds + 's</td>' +
+      '</tr>';
+    }).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="4" class="text-center">載入失敗</td></tr>';
+  }
+}
+
+// ---- 洗牌 ----
+function shuffle(array) {
+  var arr = array.slice();
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+  }
+  return arr;
+}
+</script>
+</body>
+</html>
