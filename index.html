@@ -39,21 +39,20 @@
   </div>
 </div>
 
-<!-- 首頁 -->
 <div id="page-home" class="page active text-center">
   <div class="card">
-    <h3 class="mb-2" style="color: var(--green);">歡迎參加大考驗</h3>
-    <p class="text-muted mb-4">按單元選題，依序練習</p>
+    <h3 class="mb-4" style="color: var(--green);">按單元選題，依序練習</h3>
     <button class="btn btn-success btn-lg w-100 py-4 mode-btn" style="font-size: 1.5rem; font-weight: bold;" onclick="showPage('mode1-setup')">📝 單元練習</button>
   </div>
+
   <div class="card">
-    <h3 class="mb-2" style="color: var(--orange);">挑戰極限</h3>
-    <p class="text-muted mb-4">隨機出題，答錯即結束，成績排入排行榜</p>
-    <button class="btn btn-warning btn-lg w-100 py-4 mode-btn" style="font-size: 1.5rem; font-weight: bold;" onclick="showPage('mode2-setup')">🔥 挑戰模式</button>
+    <h3 class="mb-2" style="color: var(--orange); line-height: 1.4;">
+      隨機出題，挑戰連續答對次數<br>答對題數最多前一百名將顯示在排行榜
+    </h3>
+    <button class="btn btn-warning btn-lg w-100 py-4 mode-btn mt-3" style="font-size: 1.5rem; font-weight: bold;" onclick="showPage('mode2-setup')">🔥 挑戰模式</button>
   </div>
 </div>
 
-<!-- 模式一設定 -->
 <div id="page-mode1-setup" class="page">
   <div class="card">
     <h4>📝 單元練習設定</h4>
@@ -69,7 +68,6 @@
   </div>
 </div>
 
-<!-- 模式二設定 -->
 <div id="page-mode2-setup" class="page">
   <div class="card text-center">
     <h4>🔥 挑戰模式設定</h4>
@@ -79,7 +77,6 @@
   </div>
 </div>
 
-<!-- 測驗頁面 -->
 <div id="page-quiz" class="page">
   <div class="d-flex justify-content-between align-items-start mb-3">
     <div id="quiz-info" class="fw-bold fs-5">載入中...</div>
@@ -89,27 +86,20 @@
     <div id="progress-bar" class="progress-bar bg-success progress-bar-striped" style="width: 0%"></div>
   </div>
   <div id="question-card" class="card">
-    <!-- 類別：靠左 -->
     <div class="mb-2">
       <span id="q-category" class="badge bg-success fs-6 px-3 py-2">-</span>
     </div>
-    <!-- 題號左、難易度右 -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <span id="q-id" class="text-muted small">題號：-</span>
       <span id="q-difficulty" class="difficulty-badge">-</span>
     </div>
-    <!-- 題目 -->
     <h5 id="q-text" class="lh-base mb-4">題目載入中...</h5>
-    <!-- 選項 -->
     <div id="options-container"></div>
-    <!-- 說明 -->
     <div id="explanation-box" class="explanation-box"></div>
-    <!-- 下一題按鈕（答錯後出現） -->
     <button id="next-btn" class="btn btn-primary w-100 mt-3" style="display:none;" onclick="nextQuestion()">下一題 ▶</button>
   </div>
 </div>
 
-<!-- 結果頁面 -->
 <div id="page-result" class="page text-center">
   <div class="card">
     <h2 id="res-title">測驗結束！</h2>
@@ -120,7 +110,6 @@
   </div>
 </div>
 
-<!-- 排行榜 -->
 <div id="page-leaderboard" class="page">
   <div class="card">
     <h4 class="text-center mb-4">🏆 挑戰模式排行榜 (前100)</h4>
@@ -136,7 +125,7 @@
 
 <script>
 // ★ 每次重新部署 Apps Script 後請更新此 URL ★
-const API_URL = 'https://script.google.com/macros/s/AKfycbx_flL8HfLfsIy5MD99w9n9MTglGE_nIpvy2LBt-M6zI1YfuntjcONv6ATTGBRYBa6c/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyopwudfaII9359zLXrn19X0VUrwPeVnMwDq0maz6Vqvzh-MH73yQC5cuUoZjFg5Edb/exec';
 
 const CATEGORIES = ['第一單元：⼤學社會責任USR', '第二單元：永續發展⽬標SDGs', '第三單元：食農教育', '第四單元：產銷履歷', '第五單元：有機驗證', '第六單元：烏溪流域', '第七單元：農產品', '第八單元：相關課程'];
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -192,7 +181,7 @@ function updateQuestionLimit() {
   if (total > 0) {
     limitBox.style.display = 'block';
     limitInput.max = total;
-    limitInput.value = total;
+    limitInput.value = Math.min(10, total); 
     maxInfo.innerText = '目前選定範圍共有 ' + total + ' 題';
   } else {
     limitBox.style.display = 'none';
@@ -267,9 +256,8 @@ function renderQuestion() {
   document.getElementById('next-btn').style.display = 'none';
   document.getElementById('explanation-box').style.display = 'none';
 
-  // 進度資訊
   if (currentMode === 1) {
-    const catLabel = selectedCats.join('、');
+    const catLabel = selectedCats.join('<br>');
     info.innerHTML = '<div class="small text-muted mb-1">' + catLabel + '</div>'
       + '已做：' + currentIdx + ' 題 | <span class="text-primary">剩餘：' + (quizData.length - currentIdx) + ' 題</span>';
     progressBar.style.width = ((currentIdx / quizData.length) * 100) + '%';
@@ -280,13 +268,9 @@ function renderQuestion() {
     progressBar.className = 'progress-bar bg-danger progress-bar-striped progress-bar-animated';
   }
 
-  // 類別（靠左綠色徽章）
-  document.getElementById('類別').innerText = q.category || '-';
+  document.getElementById('q-category').innerText = q.category || '-';
+  document.getElementById('q-id').innerText = '題號：' + (q.id || '-');
 
-  // 題號
-  document.getElementById('q-id').innerText = 'q-category：' + (q.id || '-');
-
-  // 難易度
   const diff = document.getElementById('q-difficulty');
   const dv = q.difficulty || '';
   diff.innerText = dv || '未分級';
@@ -297,13 +281,11 @@ function renderQuestion() {
   } else if (dv.includes('難')) {
     diff.className = 'difficulty-badge difficulty-hard';
   } else {
-    diff.className = 'difficulty-badge'; // 灰色預設
+    diff.className = 'difficulty-badge';
   }
 
-  // 題目（不含類別前綴）
   document.getElementById('q-text').innerText = q.question || '';
 
-  // 選項
   const container = document.getElementById('options-container');
   container.innerHTML = '';
   (q.options || []).forEach(function(opt, i) {
@@ -334,11 +316,15 @@ function checkAnswer(chosen, correct, btn) {
     const explBox = document.getElementById('explanation-box');
     explBox.innerHTML = '<strong>📌 說明：</strong><br>' + (q.explanation || '無說明資料');
     explBox.style.display = 'block';
+    const nextBtn = document.getElementById('next-btn');
     if (currentMode === 1) {
-      document.getElementById('next-btn').style.display = 'block';
+      nextBtn.innerText = '下一題 ▶';
+      nextBtn.onclick = function() { nextQuestion(); };
     } else {
-      setTimeout(function() { endGame(); }, 2500);
+      nextBtn.innerText = '挑戰失敗，查看成績 ▶';
+      nextBtn.onclick = function() { endGame(); };
     }
+    nextBtn.style.display = 'block';
   }
 }
 
