@@ -216,7 +216,7 @@ function renderCategoryChips() {
   dynamicCategories.forEach(function(cat) {
     const count = catCounts[cat] || 0;
     const col = document.createElement('div');
-    col.className = 'col-6';
+col.className = 'col-12 col-sm-6';
     const span = document.createElement('span');
     span.className = 'cat-chip';
     span.setAttribute('data-cat', cat);
