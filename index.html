@@ -16,7 +16,7 @@
   .option-btn:hover:not(:disabled) { border-color: var(--green-light); background: #f1f8e9; }
   .correct { background: #e8f5e9 !important; border-color: #4caf50 !important; color: #2e7d32; font-weight: bold; }
   .wrong { background: #ffebee !important; border-color: #f44336 !important; color: #c62828; }
-  .cat-chip { display: inline-block; padding: 8px 15px; border: 2px solid #ddd; border-radius: 20px; margin: 5px; cursor: pointer; user-select: none; transition: 0.2s; }
+  .cat-chip { display: block; width: 100%; padding: 8px 15px; border: 2px solid #ddd; border-radius: 20px; cursor: pointer; user-select: none; transition: 0.2s; text-align: left; }
   .cat-chip.selected { background: var(--green-light); color: white; border-color: var(--green); }
   .timer { font-size: 1.2rem; font-weight: bold; color: var(--orange); }
   .difficulty-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; background: #eeeeee; color: #555; }
@@ -27,6 +27,12 @@
   .mode-btn { border-radius: 12px; transition: transform 0.2s; }
   .mode-btn:hover { transform: translateY(-3px); }
   .btn-nav { font-size: 1.7rem; padding: 10px 22px; border-radius: 10px; }
+  .countdown-bar-container { height: 8px; background: #eee; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
+  .countdown-bar { height: 100%; background: var(--orange); border-radius: 4px; transition: width 1s linear; }
+  .countdown-bar.danger { background: #f44336; }
+  .review-card { border-left: 5px solid #f44336; background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .review-card .review-correct { color: #2e7d32; font-weight: bold; }
+  .review-card .review-wrong { color: #c62828; text-decoration: line-through; }
 </style>
 </head>
 <body>
@@ -44,7 +50,6 @@
     <h3 class="mb-4" style="color: var(--green);">按單元選題，依序練習</h3>
     <button class="btn btn-success btn-lg w-100 py-4 mode-btn" style="font-size: 1.5rem; font-weight: bold;" onclick="showPage('mode1-setup')">📝 單元練習</button>
   </div>
-
   <div class="card">
     <h3 class="mb-2" style="color: var(--orange); line-height: 1.4;">
       隨機出題，挑戰連續答對次數<br>答對題數最多前一百名將顯示在排行榜
@@ -55,10 +60,16 @@
 
 <div id="page-mode1-setup" class="page">
   <div class="card">
-    <h4>📝 單元練習設定</h4>
+    <h4>📝 單元練習</h4>
     <input type="text" id="m1-user" class="form-control mb-4" placeholder="請輸入你的名字">
-    <h6>選擇單元：</h6>
-    <div id="cat-container" class="mb-4">正在載入單元資訊...</div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0">選擇單元：</h6>
+      <div>
+        <button class="btn btn-sm btn-outline-success me-2" onclick="selectAllCats()">✅ 全選</button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="clearAllCats()">🗑 清除</button>
+      </div>
+    </div>
+    <div id="cat-container" class="mb-4 row g-2"></div>
     <div id="limit-container" style="display:none;">
       <label class="form-label fw-bold">選擇練習題數：</label>
       <input type="number" id="m1-limit" class="form-control mb-2" min="1" value="0">
@@ -70,8 +81,14 @@
 
 <div id="page-mode2-setup" class="page">
   <div class="card text-center">
-    <h4>🔥 挑戰模式設定</h4>
+    <h4>🔥 挑戰模式</h4>
     <p class="text-muted">隨機全出題，答錯即結束，紀錄將排入排行榜！</p>
+    <div class="alert alert-warning small text-center">
+      <strong>⏱ 倒數規則：</strong><br>
+      第 1～10 題：每題 30 秒<br>
+      第 11～20 題：每題 20 秒<br>
+      第 21 題起：每題 10 秒
+    </div>
     <input type="text" id="m2-user" class="form-control mb-3" placeholder="請輸入挑戰者名字">
     <button class="btn btn-danger w-100 py-3 fw-bold" style="font-size: 1.2rem;" onclick="startMode2()">進入戰場</button>
   </div>
@@ -82,18 +99,28 @@
     <div id="quiz-info" class="fw-bold fs-5">載入中...</div>
     <div id="timer" class="timer">⏱ 00:00</div>
   </div>
-  <div class="progress mb-3" style="height: 12px;">
-    <div id="progress-bar" class="progress-bar bg-success progress-bar-striped" style="width: 0%"></div>
+  <!-- Mode 2 倒數計時進度條（唯一保留的進度條） -->
+  <div id="countdown-container" style="display:none;">
+    <div class="d-flex justify-content-between mb-1">
+      <span class="small fw-bold text-danger" id="countdown-text">剩餘 30 秒</span>
+      <span class="small text-muted" id="countdown-limit-text"></span>
+    </div>
+    <div class="countdown-bar-container">
+      <div id="countdown-bar" class="countdown-bar" style="width:100%"></div>
+    </div>
   </div>
+  <!-- 已移除底部 progress bar -->
   <div id="question-card" class="card">
-    <div class="mb-2">
-      <span id="q-category" class="badge bg-success fs-6 px-3 py-2">-</span>
-    </div>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <span id="q-id" class="text-muted small">題號：-</span>
-      <span id="q-difficulty" class="difficulty-badge">-</span>
-    </div>
-    <h5 id="q-text" class="lh-base mb-4">題目載入中...</h5>
+<div class="mb-2">
+  <span id="q-id" class="text-muted small">題號：-</span>
+</div>
+<div class="mb-3">
+  <span id="q-category" class="badge bg-success fs-6 px-3 py-2">-</span>
+</div>
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <h5 id="q-text" class="lh-base mb-0 me-3">題目載入中...</h5>
+  <span id="q-difficulty" class="difficulty-badge" style="flex-shrink:0;">-</span>
+</div>
     <div id="options-container"></div>
     <div id="explanation-box" class="explanation-box"></div>
     <button id="next-btn" class="btn btn-primary w-100 mt-3" style="display:none;" onclick="nextQuestion()">下一題 ▶</button>
@@ -105,9 +132,18 @@
     <h2 id="res-title">測驗結束！</h2>
     <div class="display-1 fw-bold text-success my-4" id="res-score">0</div>
     <p id="res-detail" class="fs-5 mb-4"></p>
-    
+    <button id="btn-review" class="btn btn-outline-info w-100 py-2 mb-3 fw-bold" style="display:none;" onclick="showPage('review')">📖 作答複習</button>
     <button id="btn-play-again" class="btn btn-success btn-lg w-100 py-3 mb-3 fw-bold fs-4">再一次</button>
     <button class="btn btn-outline-primary w-100 py-2" onclick="showPage('leaderboard')">查看排行榜</button>
+  </div>
+</div>
+
+<div id="page-review" class="page">
+  <div class="card">
+    <h4 class="text-center mb-3">📖 作答複習</h4>
+    <p class="text-center text-muted mb-4" id="review-summary"></p>
+    <div id="review-container"></div>
+    <button class="btn btn-secondary w-100 py-2 mt-3" onclick="showPage('result')">← 返回成績</button>
   </div>
 </div>
 
@@ -128,7 +164,6 @@
 // ★ 每次重新部署 Apps Script 後請更新此 URL ★
 const API_URL = 'https://script.google.com/macros/s/AKfycbyopwudfaII9359zLXrn19X0VUrwPeVnMwDq0maz6Vqvzh-MH73yQC5cuUoZjFg5Edb/exec';
 
-const CATEGORIES = ['第一單元：⼤學社會責任USR', '第二單元：永續發展⽬標SDGs', '第三單元：食農教育', '第四單元：產銷履歷', '第五單元：有機驗證', '第六單元：烏溪流域', '第七單元：農產品', '第八單元：相關課程'];
 const LETTERS = ['A', 'B', 'C', 'D'];
 
 let quizData = [];
@@ -139,14 +174,34 @@ let timerInt = null;
 let currentMode = 1;
 let selectedCats = [];
 let catCounts = {};
+let dynamicCategories = [];
+
+let wrongAnswers = [];
+let allAnswerRecords = [];
+
+// Mode 2 倒數計時相關變數
+let countdownInt = null;
+let countdownSec = 0;
+let countdownMax = 0;
+let isAnswered = false;
+
+// 取得每題的倒數秒數
+// ★ 修改這裡的數字就能調整各階段秒數 ★
+function getTimeLimit(questionIndex) {
+  if (questionIndex < 10) return 30;  // 第 1~10 題：30 秒
+  if (questionIndex < 20) return 20;  // 第 11~20 題：20 秒
+  return 10;                           // 第 21 題起：10 秒
+}
 
 window.onload = async function() {
   try {
     const resp = await fetch(API_URL + '?action=getCounts');
     const data = await resp.json();
     catCounts = data.counts || {};
+    dynamicCategories = Object.keys(catCounts);
   } catch (e) {
     console.warn('無法載入單元題數', e);
+    dynamicCategories = [];
   }
   renderCategoryChips();
 };
@@ -154,10 +209,17 @@ window.onload = async function() {
 function renderCategoryChips() {
   const container = document.getElementById('cat-container');
   container.innerHTML = '';
-  CATEGORIES.forEach(function(cat) {
+  if (dynamicCategories.length === 0) {
+    container.innerHTML = '<p class="text-muted">無法載入類別，請檢查後端連線</p>';
+    return;
+  }
+  dynamicCategories.forEach(function(cat) {
     const count = catCounts[cat] || 0;
+    const col = document.createElement('div');
+    col.className = 'col-6';
     const span = document.createElement('span');
     span.className = 'cat-chip';
+    span.setAttribute('data-cat', cat);
     span.innerHTML = cat + ' <span class="badge bg-secondary ms-1">' + count + ' 題</span>';
     span.onclick = function() {
       span.classList.toggle('selected');
@@ -168,8 +230,25 @@ function renderCategoryChips() {
       }
       updateQuestionLimit();
     };
-    container.appendChild(span);
+    col.appendChild(span);
+    container.appendChild(col);
   });
+}
+
+function selectAllCats() {
+  selectedCats = dynamicCategories.slice();
+  document.querySelectorAll('.cat-chip').forEach(function(chip) {
+    chip.classList.add('selected');
+  });
+  updateQuestionLimit();
+}
+
+function clearAllCats() {
+  selectedCats = [];
+  document.querySelectorAll('.cat-chip').forEach(function(chip) {
+    chip.classList.remove('selected');
+  });
+  updateQuestionLimit();
 }
 
 function updateQuestionLimit() {
@@ -181,7 +260,7 @@ function updateQuestionLimit() {
   if (total > 0) {
     limitBox.style.display = 'block';
     limitInput.max = total;
-    limitInput.value = Math.min(10, total); 
+    limitInput.value = Math.min(10, total);
     maxInfo.innerText = '目前選定範圍共有 ' + total + ' 題';
   } else {
     limitBox.style.display = 'none';
@@ -192,6 +271,7 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.getElementById('page-' + id).classList.add('active');
   if (id === 'leaderboard') loadLeaderboard();
+  if (id === 'review') renderReview();
   window.scrollTo(0, 0);
 }
 
@@ -199,7 +279,6 @@ async function startMode1() {
   const user = document.getElementById('m1-user').value.trim();
   if (!user) { alert('請輸入你的名字'); return; }
   if (selectedCats.length === 0) { alert('請選擇單元'); return; }
-  
   const limit = parseInt(document.getElementById('m1-limit').value) || 9999;
   currentMode = 1;
   await loadQuestions(selectedCats.join(','), limit);
@@ -208,7 +287,6 @@ async function startMode1() {
 async function startMode2() {
   const user = document.getElementById('m2-user').value.trim();
   if (!user) { alert('請輸入名字'); return; }
-  
   currentMode = 2;
   await loadQuestions('', 9999);
 }
@@ -221,6 +299,7 @@ async function loadQuestions(catStr, limit) {
   document.getElementById('next-btn').style.display = 'none';
   document.getElementById('q-category').innerText = '-';
   document.getElementById('timer').style.display = currentMode === 1 ? 'none' : 'block';
+  document.getElementById('countdown-container').style.display = 'none';
 
   try {
     const resp = await fetch(API_URL + '?action=getQuestions&category=' + encodeURIComponent(catStr));
@@ -243,6 +322,8 @@ async function loadQuestions(catStr, limit) {
     currentIdx = 0;
     correctCount = 0;
     timerSec = 0;
+    wrongAnswers = [];
+    allAnswerRecords = [];
     startTimer();
     renderQuestion();
 
@@ -255,21 +336,19 @@ async function loadQuestions(catStr, limit) {
 function renderQuestion() {
   const q = quizData[currentIdx];
   const info = document.getElementById('quiz-info');
-  const progressBar = document.getElementById('progress-bar');
 
   document.getElementById('next-btn').style.display = 'none';
   document.getElementById('explanation-box').style.display = 'none';
+  isAnswered = false;
 
   if (currentMode === 1) {
     const catLabel = selectedCats.join('<br>');
     info.innerHTML = '<div class="small text-muted mb-1">' + catLabel + '</div>'
       + '已做：' + currentIdx + ' 題 | <span class="text-primary">剩餘：' + (quizData.length - currentIdx) + ' 題</span>';
-    progressBar.style.width = ((currentIdx / quizData.length) * 100) + '%';
-    progressBar.className = 'progress-bar bg-success progress-bar-striped';
+    document.getElementById('countdown-container').style.display = 'none';
   } else {
     info.innerText = '連續答對：' + correctCount + ' 題';
-    progressBar.style.width = '100%';
-    progressBar.className = 'progress-bar bg-danger progress-bar-striped progress-bar-animated';
+    startCountdown();
   }
 
   document.getElementById('q-category').innerText = q.category || '-';
@@ -301,26 +380,111 @@ function renderQuestion() {
   });
 }
 
+// Mode 2 每題倒數計時
+function startCountdown() {
+  if (countdownInt) { clearInterval(countdownInt); countdownInt = null; }
+
+  // ★ 用 correctCount（已答對題數）決定秒數階段 ★
+  // ★ 如果想改用「目前第幾題」，把 correctCount 改成 currentIdx ★
+  countdownMax = getTimeLimit(correctCount);
+  countdownSec = countdownMax;
+
+  var countdownContainer = document.getElementById('countdown-container');
+  var countdownText = document.getElementById('countdown-text');
+  var countdownBar = document.getElementById('countdown-bar');
+  var countdownLimitText = document.getElementById('countdown-limit-text');
+
+  countdownContainer.style.display = 'block';
+  countdownText.innerText = '剩餘 ' + countdownSec + ' 秒';
+  countdownLimitText.innerText = '本題限時 ' + countdownMax + ' 秒';
+  countdownBar.style.width = '100%';
+  countdownBar.classList.remove('danger');
+  document.getElementById('timer').innerText = '⏱ ' + countdownSec + 's';
+
+  countdownInt = setInterval(function() {
+    countdownSec--;
+    countdownText.innerText = '剩餘 ' + countdownSec + ' 秒';
+    var pct = (countdownSec / countdownMax) * 100;
+    countdownBar.style.width = pct + '%';
+    if (countdownSec <= 5) countdownBar.classList.add('danger');
+    document.getElementById('timer').innerText = '⏱ ' + countdownSec + 's';
+
+    if (countdownSec <= 0) {
+      clearInterval(countdownInt);
+      countdownInt = null;
+      if (isAnswered) return;
+      isAnswered = true;
+
+      var btns = document.querySelectorAll('.option-btn');
+      var q = quizData[currentIdx];
+      btns.forEach(function(b) { b.disabled = true; });
+      btns.forEach(function(b, i) {
+        if (LETTERS[i] === q.answer) b.classList.add('correct');
+      });
+
+      wrongAnswers.push({ question: q, chosenLetter: '（超時）', chosenText: '未作答', isTimeout: true });
+      allAnswerRecords.push({ question: q, chosenLetter: '（超時）', chosenText: '未作答', isCorrect: false, isTimeout: true });
+
+      var explBox = document.getElementById('explanation-box');
+      explBox.innerHTML = '<strong>⏱ 時間到！正確答案：</strong>' + q.answer + '<br>'
+        + '<span style="display:flex;align-items:flex-start;"><strong style="flex-shrink:0;">💡 說明：</strong><span>' + (q.explanation || '無說明資料') + '</span></span>';
+      explBox.style.display = 'block';
+
+      var nextBtn = document.getElementById('next-btn');
+      nextBtn.innerText = '挑戰失敗，查看成績 ▶';
+      nextBtn.onclick = function() { endGame(); };
+      nextBtn.style.display = 'block';
+    }
+  }, 1000);
+}
+
+function stopCountdown() {
+  if (countdownInt) { clearInterval(countdownInt); countdownInt = null; }
+}
+
 function checkAnswer(chosen, correct, btn) {
+  if (isAnswered) return;
+  isAnswered = true;
+  stopCountdown();
+
   const btns = document.querySelectorAll('.option-btn');
   const q = quizData[currentIdx];
   btns.forEach(function(b) { b.disabled = true; });
 
   const isCorrect = (chosen === correct);
+  const explBox = document.getElementById('explanation-box');
+  const nextBtn = document.getElementById('next-btn');
+  var chosenIndex = LETTERS.indexOf(chosen);
+  var chosenText = (q.options && q.options[chosenIndex]) ? q.options[chosenIndex] : chosen;
 
   if (isCorrect) {
     btn.classList.add('correct');
     correctCount++;
-    setTimeout(function() { nextQuestion(); }, 800);
+    allAnswerRecords.push({ question: q, chosenLetter: chosen, chosenText: chosenText, isCorrect: true, isTimeout: false });
+
+    // ★ 說明文字直接接在：後面，不換行 ★
+    explBox.innerHTML = '<strong>✅ 答對了！</strong><br>'
+      + '<span style="display:flex;align-items:flex-start;"><strong style="flex-shrink:0;">💡 說明：</strong><span>' + (q.explanation || '無說明資料') + '</span></span>';
+    explBox.style.display = 'block';
+
+    nextBtn.innerText = '下一題 ▶';
+    nextBtn.onclick = function() { nextQuestion(); };
+    nextBtn.style.display = 'block';
+
   } else {
     btn.classList.add('wrong');
     btns.forEach(function(b, i) {
       if (LETTERS[i] === correct) b.classList.add('correct');
     });
-    const explBox = document.getElementById('explanation-box');
-    explBox.innerHTML = '<strong>📌 說明：</strong><br>' + (q.explanation || '無說明資料');
+
+    wrongAnswers.push({ question: q, chosenLetter: chosen, chosenText: chosenText, isTimeout: false });
+    allAnswerRecords.push({ question: q, chosenLetter: chosen, chosenText: chosenText, isCorrect: false, isTimeout: false });
+
+    // ★ 說明文字直接接在：後面，不換行 ★
+    explBox.innerHTML = '<strong>❌ 正確答案：' + correct + '</strong><br>'
+      + '<span style="display:flex;align-items:flex-start;"><strong style="flex-shrink:0;">💡 說明：</strong><span>' + (q.explanation || '無說明資料') + '</span></span>';
     explBox.style.display = 'block';
-    const nextBtn = document.getElementById('next-btn');
+
     if (currentMode === 1) {
       nextBtn.innerText = '下一題 ▶';
       nextBtn.onclick = function() { nextQuestion(); };
@@ -346,15 +510,18 @@ function startTimer() {
   timerSec = 0;
   timerInt = setInterval(function() {
     timerSec++;
-    var m = Math.floor(timerSec / 60).toString().padStart(2, '0');
-    var s = (timerSec % 60).toString().padStart(2, '0');
-    document.getElementById('timer').innerText = '⏱ ' + m + ':' + s;
+    if (currentMode === 1) {
+      var m = Math.floor(timerSec / 60).toString().padStart(2, '0');
+      var s = (timerSec % 60).toString().padStart(2, '0');
+      document.getElementById('timer').innerText = '⏱ ' + m + ':' + s;
+    }
   }, 1000);
 }
 
 async function endGame() {
   if (timerInt) { clearInterval(timerInt); timerInt = null; }
-  
+  stopCountdown();
+
   const user = (currentMode === 1
     ? document.getElementById('m1-user').value.trim()
     : document.getElementById('m2-user').value.trim()) || '匿名';
@@ -366,32 +533,28 @@ async function endGame() {
   document.getElementById('res-detail').innerText = '玩家：' + user +
     (currentMode === 2 ? ' | 耗時：' + timerSec + ' 秒' : '');
 
+  var btnReview = document.getElementById('btn-review');
+  if (allAnswerRecords.length > 0) {
+    btnReview.style.display = 'block';
+    btnReview.innerText = '📖 作答複習（共 ' + allAnswerRecords.length + ' 題，錯 ' + wrongAnswers.length + ' 題）';
+  } else {
+    btnReview.style.display = 'none';
+  }
+
   const btnPlayAgain = document.getElementById('btn-play-again');
   if (currentMode === 1) {
     btnPlayAgain.onclick = function() { showPage('mode1-setup'); };
   } else {
-    btnPlayAgain.onclick = function() { startMode2(); };
+    btnPlayAgain.onclick = function() { showPage('mode2-setup'); };
   }
 
   showPage('result');
 
   var payload;
   if (currentMode === 1) {
-    payload = {
-      action:      'saveMode1',
-      username:    user,
-      categories:  selectedCats.join(','),
-      score:       correctCount,
-      total:       quizData.length,
-      timeSeconds: timerSec
-    };
+    payload = { action: 'saveMode1', username: user, categories: selectedCats.join(','), score: correctCount, total: quizData.length, timeSeconds: timerSec };
   } else {
-    payload = {
-      action:      'saveMode2',
-      username:    user,
-      streak:      correctCount,
-      timeSeconds: timerSec
-    };
+    payload = { action: 'saveMode2', username: user, streak: correctCount, timeSeconds: timerSec };
   }
 
   try {
@@ -403,6 +566,46 @@ async function endGame() {
   } catch (e) {
     console.warn('儲存紀錄失敗:', e);
   }
+}
+
+function renderReview() {
+  var container = document.getElementById('review-container');
+  var summary = document.getElementById('review-summary');
+
+  summary.innerText = '共作答 ' + allAnswerRecords.length + ' 題，答對 ' + correctCount + ' 題，答錯 ' + wrongAnswers.length + ' 題';
+  container.innerHTML = '';
+
+  allAnswerRecords.forEach(function(item, idx) {
+    var q = item.question;
+    var correctIndex = LETTERS.indexOf(q.answer);
+    var correctText = (q.options && q.options[correctIndex]) ? q.options[correctIndex] : q.answer;
+
+    var borderColor = item.isCorrect ? '#4caf50' : '#f44336';
+    var statusIcon = item.isCorrect ? '✅' : (item.isTimeout ? '⏱' : '❌');
+
+    var html = '<div class="review-card" style="border-left-color:' + borderColor + ';">'
+      + '<div class="d-flex justify-content-between align-items-center mb-2">'
+      + '  <span class="badge bg-success">' + (q.category || '') + '</span>'
+      + '  <span class="text-muted small">題號：' + (q.id || '-') + '</span>'
+      + '</div>'
+      + '<p class="fw-bold mb-2">' + statusIcon + ' ' + (idx + 1) + '. ' + q.question + '</p>';
+
+    if (item.isCorrect) {
+      html += '<p class="mb-1 review-correct">你的答案：' + item.chosenLetter + '. ' + item.chosenText + ' ✔</p>';
+    } else {
+      html += '<p class="mb-1 review-wrong">你的答案：' + item.chosenLetter + '. ' + item.chosenText + '</p>';
+      html += '<p class="mb-1 review-correct">正確答案：' + q.answer + '. ' + correctText + '</p>';
+    }
+
+    if (q.explanation) {
+      // ★ 說明文字直接接在：後面，不換行 ★
+      html += '<div class="explanation-box" style="display:block; margin-top:10px;">'
+        + '<span style="display:flex;align-items:flex-start;"><strong style="flex-shrink:0;">💡 說明：</strong><span>' + q.explanation + '</span></span>' + '</div>';
+    }
+
+    html += '</div>';
+    container.innerHTML += html;
+  });
 }
 
 async function loadLeaderboard() {
