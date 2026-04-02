@@ -89,6 +89,9 @@
     <div id="progress-bar" class="progress-bar bg-success progress-bar-striped" style="width: 0%"></div>
   </div>
   <div id="question-card" class="card">
+    <div class="mb-3">
+      <span id="q-category" class="badge bg-success fs-6 px-3 py-2">-</span>
+    </div>
     <div class="d-flex justify-content-between mb-2">
       <span id="q-id" class="text-muted small">題號：-</span>
       <span id="q-difficulty" class="difficulty-badge">-</span>
@@ -127,7 +130,7 @@
 
 <script>
 // ★ 每次重新部署 Apps Script 後，請更新此 URL ★
-const API_URL = 'https://script.google.com/macros/s/AKfycbz4oqaQq1975FqylEE-S5xllst4xYINEjkpHr0rRw4Wpc4BF2UelUZv1k8EQe9UCBQU/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbx_flL8HfLfsIy5MD99w9n9MTglGE_nIpvy2LBt-M6zI1YfuntjcONv6ATTGBRYBa6c/exec';
 
 const CATEGORIES = ['第一單元：⼤學社會責任USR', '第二單元：永續發展⽬標SDGs', '第三單元：食農教育', '第四單元：產銷履歷', '第五單元：有機驗證', '第六單元：烏溪流域', '第七單元：農產品', '第八單元：相關課程'];
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -264,7 +267,8 @@ function renderQuestion() {
   document.getElementById('explanation-box').style.display = 'none';
 
   if (currentMode === 1) {
-    info.innerHTML = '已做：' + currentIdx + ' 題 | <span class="text-primary">剩餘：' + (quizData.length - currentIdx) + ' 題</span>';
+    const catLabel = selectedCats.join('、');
+    info.innerHTML = '<div class="small text-muted">' + catLabel + '</div>已做：' + currentIdx + ' 題 | <span class="text-primary">剩餘：' + (quizData.length - currentIdx) + ' 題</span>';
     progressBar.style.width = ((currentIdx / quizData.length) * 100) + '%';
     progressBar.className = 'progress-bar bg-success progress-bar-striped';
   } else {
@@ -273,6 +277,7 @@ function renderQuestion() {
     progressBar.className = 'progress-bar bg-danger progress-bar-striped progress-bar-animated';
   }
 
+  document.getElementById('q-category').innerText = q.category || '-';
   document.getElementById('q-id').innerText = '題號：' + (q.id || '-');
 
   const diff = document.getElementById('q-difficulty');
@@ -285,7 +290,7 @@ function renderQuestion() {
     diff.className = 'difficulty-badge difficulty-hard';
   }
 
-  document.getElementById('q-text').innerText = '[' + q.category + '] ' + q.question;
+  document.getElementById('q-text').innerText = q.question;
 
   const container = document.getElementById('options-container');
   container.innerHTML = '';
