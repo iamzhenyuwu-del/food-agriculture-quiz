@@ -281,10 +281,10 @@ function renderQuestion() {
   }
 
   // 類別（靠左綠色徽章）
-  document.getElementById('q-category').innerText = q.category || '-';
+  document.getElementById('類別').innerText = q.category || '-';
 
   // 題號
-  document.getElementById('q-id').innerText = '題號：' + (q.id || '-');
+  document.getElementById('q-id').innerText = 'q-category：' + (q.id || '-');
 
   // 難易度
   const diff = document.getElementById('q-difficulty');
