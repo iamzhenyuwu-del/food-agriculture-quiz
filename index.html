@@ -99,7 +99,6 @@
     <div id="quiz-info" class="fw-bold fs-5">載入中...</div>
     <div id="timer" class="timer">⏱ 00:00</div>
   </div>
-  <!-- Mode 2 倒數計時進度條（唯一保留的進度條） -->
   <div id="countdown-container" style="display:none;">
     <div class="d-flex justify-content-between mb-1">
       <span class="small fw-bold text-danger" id="countdown-text">剩餘 30 秒</span>
@@ -109,7 +108,6 @@
       <div id="countdown-bar" class="countdown-bar" style="width:100%"></div>
     </div>
   </div>
-  <!-- 已移除底部 progress bar -->
   <div id="question-card" class="card">
 <div class="mb-2">
   <span id="q-id" class="text-muted small">題號：-</span>
@@ -162,7 +160,7 @@
 
 <script>
 // ★ 每次重新部署 Apps Script 後請更新此 URL ★
-const API_URL = 'https://script.google.com/macros/s/AKfycbyopwudfaII9359zLXrn19X0VUrwPeVnMwDq0maz6Vqvzh-MH73yQC5cuUoZjFg5Edb/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwiEMex2a9j4DXkPgg2ifor-0_3N1sYMXGT8KqlEdkkk92zfofc-PnmJUqucmBtLFVY/exec';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
 
@@ -186,11 +184,20 @@ let countdownMax = 0;
 let isAnswered = false;
 
 // 取得每題的倒數秒數
-// ★ 修改這裡的數字就能調整各階段秒數 ★
 function getTimeLimit(questionIndex) {
-  if (questionIndex < 10) return 30;  // 第 1~10 題：30 秒
-  if (questionIndex < 20) return 20;  // 第 11~20 題：20 秒
-  return 10;                           // 第 21 題起：10 秒
+  if (questionIndex < 10) return 30;
+  if (questionIndex < 20) return 20;
+  return 10;
+}
+
+// ---- 更新單題答對/答錯統計（fire-and-forget）----
+function updateQuestionStats(questionId, isCorrect) {
+  if (!questionId) return;
+  fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'updateQuestionStats', questionId: questionId, isCorrect: isCorrect })
+  }).catch(function(e) { console.warn('更新題目統計失敗:', e); });
 }
 
 window.onload = async function() {
@@ -216,7 +223,7 @@ function renderCategoryChips() {
   dynamicCategories.forEach(function(cat) {
     const count = catCounts[cat] || 0;
     const col = document.createElement('div');
-col.className = 'col-12 col-sm-6';
+    col.className = 'col-12 col-sm-6';
     const span = document.createElement('span');
     span.className = 'cat-chip';
     span.setAttribute('data-cat', cat);
@@ -384,8 +391,6 @@ function renderQuestion() {
 function startCountdown() {
   if (countdownInt) { clearInterval(countdownInt); countdownInt = null; }
 
-  // ★ 用 correctCount（已答對題數）決定秒數階段 ★
-  // ★ 如果想改用「目前第幾題」，把 correctCount 改成 currentIdx ★
   countdownMax = getTimeLimit(correctCount);
   countdownSec = countdownMax;
 
@@ -457,12 +462,14 @@ function checkAnswer(chosen, correct, btn) {
   var chosenIndex = LETTERS.indexOf(chosen);
   var chosenText = (q.options && q.options[chosenIndex]) ? q.options[chosenIndex] : chosen;
 
+  // ★ 更新題目答對/答錯統計 ★
+  updateQuestionStats(q.id, isCorrect);
+
   if (isCorrect) {
     btn.classList.add('correct');
     correctCount++;
     allAnswerRecords.push({ question: q, chosenLetter: chosen, chosenText: chosenText, isCorrect: true, isTimeout: false });
 
-    // ★ 說明文字直接接在：後面，不換行 ★
     explBox.innerHTML = '<strong>✅ 答對了！</strong><br>'
       + '<span style="display:flex;align-items:flex-start;"><strong style="flex-shrink:0;">💡 說明：</strong><span>' + (q.explanation || '無說明資料') + '</span></span>';
     explBox.style.display = 'block';
@@ -480,7 +487,6 @@ function checkAnswer(chosen, correct, btn) {
     wrongAnswers.push({ question: q, chosenLetter: chosen, chosenText: chosenText, isTimeout: false });
     allAnswerRecords.push({ question: q, chosenLetter: chosen, chosenText: chosenText, isCorrect: false, isTimeout: false });
 
-    // ★ 說明文字直接接在：後面，不換行 ★
     explBox.innerHTML = '<strong>❌ 正確答案：' + correct + '</strong><br>'
       + '<span style="display:flex;align-items:flex-start;"><strong style="flex-shrink:0;">💡 說明：</strong><span>' + (q.explanation || '無說明資料') + '</span></span>';
     explBox.style.display = 'block';
@@ -598,7 +604,6 @@ function renderReview() {
     }
 
     if (q.explanation) {
-      // ★ 說明文字直接接在：後面，不換行 ★
       html += '<div class="explanation-box" style="display:block; margin-top:10px;">'
         + '<span style="display:flex;align-items:flex-start;"><strong style="flex-shrink:0;">💡 說明：</strong><span>' + q.explanation + '</span></span>' + '</div>';
     }
