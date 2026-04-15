@@ -34,6 +34,7 @@
   .review-card .review-correct { color: #2e7d32; font-weight: bold; }
   .review-card .review-wrong { color: #c62828; text-decoration: line-through; }
   .home-desc { font-size: clamp(0.9rem, 4.5vw, 1.75rem); }
+  .counter-digit { display:inline-block;width:16px;height:22px;line-height:22px;text-align:center;background:#333;color:#fff;font-family:'Courier New',monospace;font-size:0.85rem;font-weight:bold;border-radius:3px;border:1px solid #555; }
   .lb-filter-btn { border-radius: 20px; font-weight: bold; transition: 0.2s; }
   .lb-filter-btn.active { background: var(--green); color: white; border-color: var(--green); }
 </style>
@@ -170,7 +171,7 @@
 
 <script>
 // ★ 每次重新部署 Apps Script 後請更新此 URL ★
-const API_URL = 'https://script.google.com/macros/s/AKfycbz3rzLEK2vW-XWE2Y9H1KlB9SE8M8aQLxaapYHIsuVUDU2OhhqUx9JmTZ-qkO3aU_61/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwYXRIgqOPAt3qg4b2H5-Wk299UKMVfpeuDp28gQ75mQHYCG5zxEh9z5F5yV_sgS1bm/exec';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
 
@@ -224,6 +225,24 @@ window.onload = async function() {
     dynamicCategories = [];
   }
   renderCategoryChips();
+
+  // 訪客計數器
+  try {
+    const vResp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'addVisit' })
+    });
+    const vData = await vResp.json();
+    if (vData.count != null) {
+      var digits = vData.count.toString().padStart(8, '0').split('');
+      document.getElementById('visitor-counter').innerHTML = digits.map(function(d) {
+        return '<span class="counter-digit">' + d + '</span>';
+      }).join('');
+    }
+  } catch (e) {
+    console.warn('訪客計數器失敗:', e);
+  }
 };
 
 function renderCategoryChips() {
@@ -677,7 +696,7 @@ function shuffle(array) {
 </script>
 
 <div style="text-align:center;padding:20px 0 10px;">
-<nobr><table border="0" cellspacing="0" cellpadding="0" style="display:inline-table;"><tbody><tr><td><a href="https://ctr.stylemap.co.jp/"><img src="https://www.f-counter.net/ani1/67/1776238042/" alt="無料アクセスカウンター" border="0" style="margin:0px; padding:0px; border:0px; vertical-align:bottom"></a></td><td><a href="https://ctr.stylemap.co.jp/"><img src="https://www.f-counter.net/ani2/67/1776238042/" alt="無料アクセスカウンター" border="0" style="margin:0px; padding:0px; border:0px; vertical-align:bottom"></a></td></tr></tbody></table></nobr>
+  <span id="visitor-counter" style="display:inline-flex;gap:2px;"></span>
 </div>
 
 </body>
